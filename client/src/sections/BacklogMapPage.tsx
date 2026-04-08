@@ -103,11 +103,26 @@ export default function BacklogMapPage() {
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [geoData, setGeoData] = useState<any>(null);
 
-  // Load GeoJSON once
+  // Load GeoJSON once — use BASE_URL so it works both locally and on the deployed proxy path
   useEffect(() => {
-    fetch('/world.geo.json')
-      .then((r) => r.json())
-      .then(setGeoData);
+    const base = import.meta.env.BASE_URL ?? '/';
+    const url = base.endsWith('/') ? `${base}world.geo.json` : `${base}/world.geo.json`;
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`GeoJSON fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        // Handle both FeatureCollection and raw array
+        if (data && Array.isArray(data.features)) {
+          setGeoData(data);
+        } else if (Array.isArray(data)) {
+          setGeoData({ type: 'FeatureCollection', features: data });
+        } else {
+          console.error('Unexpected GeoJSON shape:', Object.keys(data));
+        }
+      })
+      .catch((err) => console.error('BacklogMap GeoJSON load error:', err));
   }, []);
 
   // Redraw map whenever geoData or theme changes
