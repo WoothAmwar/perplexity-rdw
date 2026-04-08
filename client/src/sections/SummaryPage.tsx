@@ -17,7 +17,7 @@ const segments = [
   {
     name: 'Space Infrastructure',
     pct: 49,
-    color: 'var(--rdw-red)',
+    color: '#C8102E',
     q4rev: '$54.5M',
     backlog: '$299.8M',
     bToB: '2.04x',
