@@ -1,70 +1,90 @@
 import { useEffect, useRef, useState } from 'react';
-import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
+import * as HighchartsMapModule from 'highcharts/modules/map';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 import { useTheme } from '../App';
 
-// RDW backlog by country/region — inferred from memo & SEC filings
-// Total contracted backlog: $411.2M
+// Initialise Highcharts Maps module once — handle both ESM default and CommonJS
+const initMap = (HighchartsMapModule as any).default ?? HighchartsMapModule;
+if (typeof initMap === 'function') {
+  initMap(Highcharts);
+}
+
+// RDW backlog by country — total contracted backlog $411.2M
 const BACKLOG_COUNTRIES = [
   {
+    hcKey: 'us',
     id: 'USA',
     name: 'United States',
-    lng: -100, lat: 38,
+    lat: 38,
+    lon: -100,
     value: 245,
     pct: 59.6,
     color: '#C8102E',
     programs: ['NASA ISS (iROSA/ELSA)', 'DoD / US SOF Stalker UAS', 'Axiom Station', 'Edge Autonomy SOFC production'],
   },
   {
+    hcKey: 'be',
     id: 'BEL',
     name: 'Belgium / EU',
-    lng: 4.5, lat: 50.5,
+    lat: 50.8,
+    lon: 4.5,
     value: 68,
     pct: 16.5,
     color: '#8B5CF6',
-    programs: ['EuroQCI Phase 1 complete', 'MATTEO — Belgium\'s first national security satellite (prime contractor)'],
+    programs: ['EuroQCI Phase 1 complete', "MATTEO — Belgium's first national security satellite (prime contractor)"],
   },
   {
+    hcKey: 'gb',
     id: 'GBR',
     name: 'United Kingdom',
-    lng: -1.5, lat: 53,
+    lat: 53.0,
+    lon: -1.5,
     value: 32,
     pct: 7.8,
     color: '#1ABCB4',
     programs: ['QKDSat quantum comms backbone', 'NATO allied UAS deliveries'],
   },
   {
+    hcKey: 'ua',
     id: 'UKR',
     name: 'Ukraine',
-    lng: 32, lat: 49,
+    lat: 49.0,
+    lon: 32.0,
     value: 24,
     pct: 5.8,
     color: '#F59E0B',
     programs: ['Stalker XE tactical UAS — 200+ deployed in active theater'],
   },
   {
+    hcKey: 'ae',
     id: 'UAE',
     name: 'UAE / Gulf',
-    lng: 54, lat: 24,
+    lat: 24.0,
+    lon: 54.0,
     value: 18,
     pct: 4.4,
     color: '#10B981',
     programs: ['Commercial satellite infrastructure', 'ISR systems integration'],
   },
   {
+    hcKey: 'jp',
     id: 'JPN',
     name: 'Japan',
-    lng: 138, lat: 36,
+    lat: 36.0,
+    lon: 138.0,
     value: 14,
     pct: 3.4,
     color: '#0EA5E9',
     programs: ['JAXA ISS collaboration', 'Microgravity pharma trials (PIL-BOX)'],
   },
   {
+    hcKey: 'au',
     id: 'AUS',
     name: 'Australia',
-    lng: 134, lat: -25,
+    lat: -25.0,
+    lon: 134.0,
     value: 10,
     pct: 2.4,
     color: '#D4A017',
@@ -72,201 +92,173 @@ const BACKLOG_COUNTRIES = [
   },
 ];
 
-const rScale = d3.scaleSqrt().domain([0, 245]).range([6, 44]);
+// Lookup by hcKey for tooltip
+const COUNTRY_MAP: Record<string, typeof BACKLOG_COUNTRIES[0]> = {};
+BACKLOG_COUNTRIES.forEach((c) => { COUNTRY_MAP[c.hcKey] = c; });
 
 export default function BacklogMapPage() {
   const { dark } = useTheme();
-  const svgRef = useRef<SVGSVGElement>(null);
+  const chartRef = useRef<HighchartsReact.RefObject>(null);
   const [hovered, setHovered] = useState<typeof BACKLOG_COUNTRIES[0] | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [mapData, setMapData] = useState<any>(null);
 
   useEffect(() => {
-    const el = svgRef.current;
-    if (!el) return;
+    fetch('/world.geo.json')
+      .then((r) => r.json())
+      .then(setMapData);
+  }, []);
 
-    fetch('/world-110m.json')
-      .then(r => r.json())
-      .then((world: any) => {
-        const svg = d3.select(el);
-        svg.selectAll('*').remove();
+  // Rebuild options whenever theme or mapData changes
+  const options: Highcharts.Options | null = (() => {
+    if (!mapData) return null;
 
-        const W = el.clientWidth || 800;
-        const H = Math.round(W * 0.52);
-        svg.attr('viewBox', `0 0 ${W} ${H}`).attr('width', W).attr('height', H);
+    const landFill  = dark ? '#1a2332' : '#dde4ed';
+    const border    = dark ? '#2d3a4d' : '#b8c2ce';
+    const bg        = dark ? '#0d1117' : '#f8fafc';
+    const ttBg      = dark ? '#111827' : '#ffffff';
+    const ttText    = dark ? '#9BA8BB' : '#1F2937';
+    const ttMuted   = dark ? '#6B7280' : '#6B7280';
 
-        // Natural Earth projection — well-suited for a world overview
-        const projection = d3.geoNaturalEarth1()
-          .scale(W / 6.4)
-          .translate([W / 2, H / 2]);
+    // Build series: (a) choropleth base, (b) mapbubble overlay
+    // For mapbubble, per-point color is set via `marker.fillColor`
+    const bubbleSeries: Highcharts.SeriesMapbubbleOptions = {
+      type: 'mapbubble',
+      name: 'Backlog',
+      joinBy: ['hc-key', 'hcKey'],
+      minSize: '5%',
+      maxSize: '18%',
+      zMin: 0,
+      zMax: 245,
+      enableMouseTracking: true,
+      cursor: 'pointer',
+      dataLabels: {
+        enabled: true,
+        format: '{point.id}',
+        style: {
+          fontSize: '9px',
+          fontWeight: '700',
+          color: '#ffffff',
+          textOutline: 'none',
+        },
+        allowOverlap: true,
+      },
+      states: {
+        hover: {
+          enabled: true,
+          brightness: 0.12,
+        },
+      },
+      data: BACKLOG_COUNTRIES.map((c) => ({
+        hcKey: c.hcKey,
+        id: c.id,
+        z: c.value,
+        lat: c.lat,
+        lon: c.lon,
+        color: c.color,
+        name: c.name,
+        // Custom fields for tooltip
+        customPct: c.pct,
+        customValue: c.value,
+        customPrograms: c.programs,
+        marker: {
+          fillColor: c.color + 'AA', // 67% opacity
+          lineColor: c.color,
+          lineWidth: 1.5,
+        },
+      })) as any,
+      tooltip: {
+        pointFormatter(this: Highcharts.Point): string {
+          const pt = this as any;
+          const c = COUNTRY_MAP[pt.hcKey];
+          if (!c) return '';
+          const lines = c.programs.map((p) =>
+            `<span style="color:${ttMuted}">· ${p}</span>`
+          ).join('<br/>');
+          return `<span style="color:${c.color};font-weight:700;font-size:12px;">${c.name}</span><br/>
+<span style="font-family:'Space Mono',monospace;font-weight:600;color:${ttText}">$${c.value}M · ${c.pct}% of backlog</span><br/><br/>
+${lines}`;
+        },
+      },
+    };
 
-        const path = d3.geoPath().projection(projection);
+    const mapSeries: Highcharts.SeriesMapOptions = {
+      type: 'map',
+      name: 'World',
+      mapData: mapData,
+      joinBy: 'hc-key',
+      data: BACKLOG_COUNTRIES.map((c) => ({
+        'hc-key': c.hcKey,
+        value: c.value,
+        // Highlight country fill subtly
+        color: c.color + '20', // 12% opacity tint
+      })),
+      nullColor: landFill,
+      borderColor: border,
+      borderWidth: 0.4,
+      enableMouseTracking: false,
+      states: {
+        hover: { enabled: false },
+      },
+      dataLabels: { enabled: false },
+    };
 
-        // Country fills
-        const countries = topojson.feature(world, world.objects.countries) as any;
+    return {
+      chart: {
+        map: mapData,
+        backgroundColor: bg,
+        margin: [0, 0, 0, 0],
+        spacing: [4, 4, 4, 4],
+        animation: { duration: 400 },
+        style: { fontFamily: "'Inter', 'Space Mono', sans-serif" },
+      },
+      title: { text: '' },
+      subtitle: { text: '' },
+      credits: { enabled: false },
+      legend: { enabled: false },
+      colorAxis: { visible: false },
 
-        svg.append('g')
-          .selectAll('path')
-          .data(countries.features)
-          .join('path')
-          .attr('d', path as any)
-          .attr('fill', dark ? '#1a2332' : '#e8edf4')
-          .attr('stroke', dark ? '#2d3a4d' : '#c5cdd9')
-          .attr('stroke-width', 0.4);
+      mapNavigation: {
+        enabled: true,
+        enableMouseWheelZoom: false,
+        buttonOptions: {
+          theme: {
+            fill: dark ? '#1a2332' : '#f0f2f5',
+            stroke: dark ? '#2d3a4d' : '#c5cdd9',
+            style: { color: dark ? '#9BA8BB' : '#374151' },
+          },
+        },
+      },
 
-        // Country borders
-        const borders = topojson.mesh(world, world.objects.countries, (a: any, b: any) => a !== b);
-        svg.append('path')
-          .datum(borders)
-          .attr('d', path as any)
-          .attr('fill', 'none')
-          .attr('stroke', dark ? '#2d3a4d' : '#b8c2ce')
-          .attr('stroke-width', 0.25);
+      tooltip: {
+        useHTML: true,
+        backgroundColor: ttBg,
+        borderWidth: 0,
+        borderRadius: 8,
+        shadow: true,
+        padding: 12,
+        style: { color: ttText, fontSize: '11px', pointerEvents: 'none' },
+        headerFormat: '',
+      },
 
-        // Graticule (lat/lon grid lines)
-        svg.append('path')
-          .datum(d3.geoGraticule()())
-          .attr('d', path as any)
-          .attr('fill', 'none')
-          .attr('stroke', dark ? '#1e2a3a' : '#dce3ea')
-          .attr('stroke-width', 0.3)
-          .attr('stroke-opacity', 0.7);
+      plotOptions: {
+        series: {
+          point: {
+            events: {
+              mouseOver(this: Highcharts.Point) {
+                const pt = this as any;
+                if (pt.hcKey) setHovered(COUNTRY_MAP[pt.hcKey] || null);
+              },
+              mouseOut() {
+                setHovered(null);
+              },
+            },
+          },
+        },
+      },
 
-        // Sphere outline
-        svg.append('path')
-          .datum({ type: 'Sphere' } as any)
-          .attr('d', path as any)
-          .attr('fill', 'none')
-          .attr('stroke', dark ? '#2d3a4d' : '#c0c9d4')
-          .attr('stroke-width', 0.6);
-
-        // Equator line
-        svg.append('path')
-          .datum(d3.geoGraticule().step([360, 0])() as any)
-          .attr('d', path as any)
-          .attr('fill', 'none')
-          .attr('stroke', dark ? '#2d3a4d' : '#c5cdd9')
-          .attr('stroke-width', 0.5)
-          .attr('stroke-dasharray', '4,4')
-          .attr('stroke-opacity', 0.5);
-
-        // ── Bubble circles ──────────────────────────────────────────────────────
-        const bubbleGroup = svg.append('g').attr('class', 'bubbles');
-
-        BACKLOG_COUNTRIES.forEach((c) => {
-          const coords = projection([c.lng, c.lat]);
-          if (!coords) return;
-          const [cx, cy] = coords;
-          const r = rScale(c.value);
-
-          const g = bubbleGroup.append('g')
-            .style('cursor', 'pointer')
-            .on('mouseenter', (event: MouseEvent) => {
-              const rect = el.getBoundingClientRect();
-              setHovered(c);
-              setTooltipPos({
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top,
-              });
-            })
-            .on('mousemove', (event: MouseEvent) => {
-              const rect = el.getBoundingClientRect();
-              setTooltipPos({
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top,
-              });
-            })
-            .on('mouseleave', () => setHovered(null));
-
-          // Outer glow ring
-          g.append('circle')
-            .attr('cx', cx).attr('cy', cy)
-            .attr('r', r + 5)
-            .attr('fill', c.color)
-            .attr('fill-opacity', 0.08)
-            .attr('stroke', 'none');
-
-          // Main bubble
-          g.append('circle')
-            .attr('cx', cx).attr('cy', cy)
-            .attr('r', r)
-            .attr('fill', c.color)
-            .attr('fill-opacity', 0.55)
-            .attr('stroke', c.color)
-            .attr('stroke-width', 1.5)
-            .attr('stroke-opacity', 0.85)
-            .attr('class', 'bubble-main')
-            .style('transition', 'fill-opacity 0.2s, r 0.2s');
-
-          // Country ID label (only for circles large enough)
-          if (r >= 12) {
-            g.append('text')
-              .attr('x', cx).attr('y', cy)
-              .attr('text-anchor', 'middle')
-              .attr('dominant-baseline', 'middle')
-              .attr('font-size', r >= 20 ? '11px' : '9px')
-              .attr('font-weight', '700')
-              .attr('font-family', "'Space Mono', monospace")
-              .attr('fill', 'white')
-              .attr('fill-opacity', 0.95)
-              .attr('pointer-events', 'none')
-              .text(c.id);
-          }
-
-          // $M value below
-          if (r >= 10) {
-            g.append('text')
-              .attr('x', cx).attr('y', cy + r + 11)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', '9px')
-              .attr('font-weight', '600')
-              .attr('font-family', "'Space Mono', monospace")
-              .attr('fill', c.color)
-              .attr('fill-opacity', 0.9)
-              .attr('pointer-events', 'none')
-              .text(`$${c.value}M`);
-          }
-        });
-
-        // Pulse animation on USA (dominant position)
-        const usaCoords = projection([-100, 38]);
-        if (usaCoords) {
-          const [ux, uy] = usaCoords;
-          const ur = rScale(245);
-          const pulseCircle = svg.append('circle')
-            .attr('cx', ux).attr('cy', uy)
-            .attr('r', ur)
-            .attr('fill', 'none')
-            .attr('stroke', '#C8102E')
-            .attr('stroke-width', 1.5)
-            .attr('pointer-events', 'none');
-
-          const doPulse = () => {
-            pulseCircle
-              .attr('r', ur)
-              .attr('opacity', 0.5)
-              .transition()
-              .duration(2200)
-              .ease(d3.easeSinOut)
-              .attr('r', ur + 14)
-              .attr('opacity', 0)
-              .on('end', doPulse);
-          };
-          doPulse();
-        }
-      });
-
-    return () => {};
-  }, [dark]);
-
-  // Tooltip position: keep inside SVG bounds
-  const tt = hovered;
-  const svgW = svgRef.current?.clientWidth ?? 800;
-  const svgH = svgRef.current?.clientHeight ?? 416;
-  const ttW = 240, ttH = 88;
-  const ttX = Math.min(Math.max(tooltipPos.x + 14, 4), svgW - ttW - 4);
-  const ttY = tooltipPos.y > svgH * 0.65
-    ? tooltipPos.y - ttH - 14
-    : tooltipPos.y + 14;
+      series: [mapSeries as any, bubbleSeries as any],
+    };
+  })();
 
   return (
     <section id="backlog-map" className="page-section">
@@ -298,41 +290,23 @@ export default function BacklogMapPage() {
               <div className="section-eyebrow mb-2 text-[10px]">
                 Backlog by Geography · Circle area ∝ $M committed · Hover for program detail
               </div>
-              <div className="relative">
-                <svg
-                  ref={svgRef}
-                  className="w-full rounded-lg"
-                  style={{ minHeight: 260 }}
-                  aria-label="Global backlog heatmap"
-                />
-                {/* DOM tooltip — theme-aware */}
-                {tt && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: ttX,
-                      top: ttY,
-                      zIndex: 50,
-                      background: 'var(--card-bg)',
-                      border: `1px solid ${tt.color}`,
-                      borderRadius: 8,
-                      padding: '10px 14px',
-                      maxWidth: ttW,
-                      pointerEvents: 'none',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              <div style={{ minHeight: 280 }}>
+                {options ? (
+                  <HighchartsReact
+                    ref={chartRef}
+                    highcharts={Highcharts}
+                    constructorType="mapChart"
+                    options={options}
+                    containerProps={{
+                      style: { width: '100%', height: 320, borderRadius: 8, overflow: 'hidden' },
                     }}
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center text-[12px]"
+                    style={{ height: 320, color: 'var(--text-muted)' }}
                   >
-                    <div className="text-[12px] font-bold mb-0.5" style={{ color: tt.color }}>
-                      {tt.name}
-                    </div>
-                    <div className="text-[11px] font-mono font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                      ${tt.value}M · {tt.pct}% of backlog
-                    </div>
-                    {tt.programs.map((p, i) => (
-                      <div key={i} className="text-[10px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-                        · {p}
-                      </div>
-                    ))}
+                    Loading map…
                   </div>
                 )}
               </div>
