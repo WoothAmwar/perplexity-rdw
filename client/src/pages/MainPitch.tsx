@@ -7,6 +7,7 @@ import QuantumPage from '../sections/QuantumPage';
 import PharmaPage from '../sections/PharmaPage';
 import FuelCellPage from '../sections/FuelCellPage';
 import SpacePage from '../sections/SpacePage';
+import BacklogMapPage from '../sections/BacklogMapPage';
 import RevenuePage from '../sections/RevenuePage';
 import EbitdaPage from '../sections/EbitdaPage';
 import DeleverPage from '../sections/DeleverPage';
@@ -29,6 +30,7 @@ export default function MainPitch() {
       <PharmaPage />
       <FuelCellPage />
       <SpacePage />
+      <BacklogMapPage />
       <RevenuePage />
       <EbitdaPage />
       <DeleverPage />

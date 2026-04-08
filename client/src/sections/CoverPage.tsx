@@ -93,24 +93,25 @@ export default function CoverPage() {
           <span className="text-gradient-red">Infrastructure Monopoly</span>
         </h1>
 
-        {/* Price Target — equally prominent to headline */}
+        {/* Price Target — equally prominent to headline, gold to stand out */}
         <div className="mb-6">
           <div
             className="font-black font-mono inline-block"
             style={{
-              fontSize: 'clamp(40px, 6vw, 80px)',
+              fontSize: 'clamp(44px, 6.5vw, 88px)',
               lineHeight: 1.05,
-              color: '#C8102E',
+              color: '#D4A017',
               letterSpacing: '-1px',
+              textShadow: '0 0 40px rgba(212,160,23,0.35)',
             }}
           >
             $16.00
           </div>
           <div
-            className="text-[13px] font-mono tracking-[4px] uppercase mt-1"
+            className="text-[12px] font-mono tracking-[4px] uppercase mt-1"
             style={{ color: 'var(--text-muted)' }}
           >
-            Price Target · +{UPSIDE}% Upside · LONG
+            12-Month Price Target
           </div>
         </div>
 
@@ -120,30 +121,18 @@ export default function CoverPage() {
           <span style={{ color: 'var(--rdw-red)', fontWeight: 600 }}>64% discount to intrinsic value</span>.
         </p>
 
-        {/* Key metrics — no "Live" label */}
-        <div className="flex flex-wrap justify-center gap-4 mb-10">
+        {/* Key metrics — only non-redundant data points */}
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
           {[
-            { label: 'Price Target', value: '$16.00', color: 'var(--rdw-red)' },
-            { label: 'Upside', value: `+${UPSIDE}%`, color: '#10B981' },
-            { label: 'Rating', value: 'LONG', color: '#10B981' },
             { label: 'Current Price', value: `$${LIVE_PRICE.toFixed(2)}`, color: 'var(--text-secondary)' },
             { label: 'Mkt Cap', value: '$1.83B', color: 'var(--text-secondary)' },
+            { label: '52W Range', value: '$4.87 – $22.25', color: 'var(--text-secondary)' },
           ].map((m) => (
             <div key={m.label} className="glass-card glass-card-hover px-6 py-3 text-center min-w-[120px]">
               <div className="text-2xl font-bold font-mono" style={{ color: m.color }}>{m.value}</div>
               <div className="text-[11px] tracking-widest uppercase mt-1" style={{ color: 'var(--text-muted)' }}>{m.label}</div>
             </div>
           ))}
-        </div>
-
-        {/* Rating badges */}
-        <div className="flex justify-center gap-3 mb-10">
-          <span className="badge-long">Strong Long</span>
-          <span className="badge-target">PT: $16.00</span>
-          <span className="px-3 py-1 rounded-full text-[11px] font-semibold"
-            style={{ border: '1px solid var(--card-border)', color: 'var(--text-muted)' }}>
-            52W: $4.87 – $22.25
-          </span>
         </div>
 
         {/* Why Now urgency strip */}

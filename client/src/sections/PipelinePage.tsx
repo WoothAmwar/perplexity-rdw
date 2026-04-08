@@ -56,7 +56,7 @@ const STAGE_LABELS = {
 
 export default function PipelinePage() {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [scaleByBacklog, setScaleByBacklog] = useState(false);
+  const [scaleByBacklog, setScaleByBacklog] = useState(true);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number; visible: boolean }>({
     text: '', x: 0, y: 0, visible: false,
   });
@@ -171,7 +171,9 @@ export default function PipelinePage() {
               The Maturity Pipeline
             </h2>
             <p className="section-subtitle max-w-2xl">
-              Every node is a product line or platform. Drag to explore relationships. Heritage fades — Active pulses — Frontier burns red.
+              Every node is a product line or platform. Drag to explore relationships.
+              Icons for pre-2026 heritage products appear faded to indicate visual maturity — not that Redwire’s institutional knowledge or engineering depth has faded.
+              Active programs pulse gold. Growth-stage frontier burns red.
             </p>
           </div>
           <button

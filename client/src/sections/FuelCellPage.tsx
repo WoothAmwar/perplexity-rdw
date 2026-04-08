@@ -2,145 +2,258 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
-interface FDNode {
-  id: string;
-  label: string;
-  type: 'rdw' | 'capability' | 'competitor' | 'outcome';
-  description: string;
-  inhouse: boolean;
-  x?: number;
-  y?: number;
-  fx?: number | null;
-  fy?: number | null;
-}
-
-const FD_NODES: FDNode[] = [
-  { id: 'rdw', label: 'RDW', type: 'rdw', inhouse: true, description: 'Redwire / Edge Autonomy — vertically integrated defense & space.' },
-  { id: 'sofc', label: 'SOFC Stack', type: 'capability', inhouse: true, description: 'Solid Oxide Fuel Cell power stack — built entirely in-house by Edge Autonomy. Converts hydrogen or JP-8 fuel to electricity at 60% efficiency. No battery pack. No dependency on external power suppliers.' },
-  { id: 'stalker', label: 'Stalker XE', type: 'capability', inhouse: true, description: 'Long-endurance UAS. 8–10 hours flight time on SOFC vs 2–3 hours for battery-powered competitors. 300km+ range ISR platform. Used by US Army, Special Operations Forces.' },
-  { id: 'ism_d', label: 'ISR Payload', type: 'capability', inhouse: true, description: 'Multi-domain Intelligence, Surveillance, Reconnaissance payloads. Thermal, EO/IR, SAR-capable. Integrates with DoD networks via Link 16.' },
-  { id: 'irosa_d', label: 'Space Power', type: 'capability', inhouse: true, description: 'iROSA solar arrays power RDW\'s own satellites and structures. Eliminates dependence on third-party power suppliers for space platforms.' },
-  { id: 'avav', label: 'AeroVironment', type: 'competitor', inhouse: false, description: 'AVAV\'s UAS (Puma, Raven, Switchblade) use third-party batteries from Ultralife/EaglePicher. No internal power stack. Dependent on supply chain for endurance improvements.' },
-  { id: 'ktos', label: 'Kratos (KTOS)', type: 'competitor', inhouse: false, description: 'KTOS target drones and tactical UAS rely on external turbine/battery suppliers. Higher cost per sortie vs SOFC-powered platforms at similar range.' },
-  { id: 'outcome1', label: '30% Cost Advantage', type: 'outcome', inhouse: true, description: 'Owning the SOFC stack eliminates a $120–180/hr cost that AVAV/KTOS pay third-party power providers. At 1,000 flight hours/yr per unit, that\'s $120–180K in margin per platform.' },
-  { id: 'outcome2', label: 'Export Control', type: 'outcome', inhouse: true, description: 'In-house SOFC simplifies ITAR compliance. RDW controls all export-sensitive components — critical for allied nation sales (Australia, UK, NATO members).' },
+// ─── Cost advantage data per platform ────────────────────────────────────────
+// Each item represents a structural cost/margin advantage RDW has that
+// competitors (AVAV, KTOS) pay externally and cannot match without their own infra.
+const COST_ADVANTAGES = [
+  {
+    id: 'sofc',
+    label: 'SOFC Power Stack',
+    rdwSaving: 180,      // $ per flight hour — estimated avoided 3rd-party cost
+    competitor: 'AVAV/KTOS',
+    compCost: 180,
+    color: '#D4A017',
+    explanation: "AVAV sources batteries from Ultralife/EaglePicher; KTOS uses external turbines. RDW builds its own SOFC in-house at Edge Autonomy's Ann Arbor facility. Estimated $120\u2013180/hr in avoided 3rd-party power costs per platform at 1,000 flight-hr/yr.",
+    annualFleetSaving: 18000,   // $K at 100-unit fleet, 1,000 hrs/yr
+  },
+  {
+    id: 'itar',
+    label: 'ITAR / Export Compliance',
+    rdwSaving: 45,
+    competitor: 'AVAV/KTOS',
+    compCost: 45,
+    color: '#1ABCB4',
+    explanation: 'In-house SOFC means RDW controls all ITAR-sensitive components. Competitors must negotiate multi-party compliance frameworks with external power vendors for every allied-nation sale. RDW estimates $40–50/hr equivalent compliance overhead eliminated.',
+    annualFleetSaving: 4500,
+  },
+  {
+    id: 'supply',
+    label: 'Supply Chain Margin Leakage',
+    rdwSaving: 95,
+    competitor: 'AVAV/KTOS',
+    compCost: 95,
+    color: '#C0392B',
+    explanation: 'Third-party power suppliers extract margin at the component level. RDW vertical integration captures the full $85–100/hr gross margin that would otherwise flow to external suppliers. Compresses competitor margins by an estimated 4–6% on defense contracts.',
+    annualFleetSaving: 9500,
+  },
+  {
+    id: 'endurance',
+    label: 'Mission Capability Premium',
+    rdwSaving: 320,
+    competitor: 'AVAV/KTOS',
+    compCost: 0,
+    color: '#8B5CF6',
+    explanation: 'Stalker XE achieves 8–10hr endurance vs 2–3hr for battery competitors. At $5–8K/sortie DoD pricing, each additional 6–7hrs creates a ~$320/hr equivalent capability premium that allows RDW to bid at higher per-sortie prices while still being cheaper per ISR-hour delivered.',
+    annualFleetSaving: 32000,
+  },
+  {
+    id: 'space_power',
+    label: 'Space Platform Self-Sufficiency',
+    rdwSaving: 130,
+    competitor: 'AVAV/KTOS',
+    compCost: 130,
+    color: '#10B981',
+    explanation: 'iROSA solar arrays power RDW\'s own satellite platforms at zero third-party cost. Competitors must purchase or license solar power systems for any space-integrated product. Estimated avoided cost: $110–150/hr equivalent across space+defense combined platforms.',
+    annualFleetSaving: 13000,
+  },
 ];
 
-const FD_LINKS = [
-  { source: 'rdw', target: 'sofc', weight: 3 },
-  { source: 'rdw', target: 'stalker', weight: 3 },
-  { source: 'rdw', target: 'ism_d', weight: 2 },
-  { source: 'rdw', target: 'irosa_d', weight: 2 },
-  { source: 'sofc', target: 'stalker', weight: 4 },
-  { source: 'sofc', target: 'outcome1', weight: 2 },
-  { source: 'sofc', target: 'outcome2', weight: 2 },
-  { source: 'stalker', target: 'ism_d', weight: 2 },
-  { source: 'avav', target: 'outcome1', weight: 1, outsourced: true },
-  { source: 'ktos', target: 'outcome1', weight: 1, outsourced: true },
-];
+const TOTAL_PER_HR = COST_ADVANTAGES.reduce((s, c) => s + c.rdwSaving, 0);
+const TOTAL_FLEET = COST_ADVANTAGES.reduce((s, c) => s + c.annualFleetSaving, 0);
 
-const NODE_COLORS = {
-  rdw: '#D4A017',
-  capability: '#1ABCB4',
-  competitor: '#C0392B',
-  outcome: '#8B5CF6',
-};
+// ─── Compound growth table ─────────────────────────────────────────────────
+// How RDW's cost advantage compounds vs peers as fleet scales
+const COMPOUND_ROWS = [
+  { year: 'FY2025', fleet: 200, hrsPerUnit: 800, marginAdv: 12 },
+  { year: 'FY2026E', fleet: 320, hrsPerUnit: 900, marginAdv: 14 },
+  { year: 'FY2027E', fleet: 480, hrsPerUnit: 1000, marginAdv: 17 },
+  { year: 'FY2028E', fleet: 650, hrsPerUnit: 1100, marginAdv: 21 },
+];
 
 export default function FuelCellPage() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [tooltip, setTooltip] = useState<{ node: FDNode | null; x: number; y: number; visible: boolean }>({
-    node: null, x: 0, y: 0, visible: false,
-  });
+  const barRef = useRef<SVGSVGElement>(null);
+  const waterfallRef = useRef<SVGSVGElement>(null);
+  const [activeAdv, setActiveAdv] = useState<typeof COST_ADVANTAGES[0] | null>(null);
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number; visible: boolean }>({ text: '', x: 0, y: 0, visible: false });
 
+  // ── Competitor comparison bar chart ────────────────────────────────────────
   useEffect(() => {
-    const svg = d3.select(svgRef.current);
+    const el = barRef.current;
+    if (!el) return;
+    const svg = d3.select(el);
     svg.selectAll('*').remove();
 
-    const el = svgRef.current;
-    if (!el) return;
-    const W = el.clientWidth || 700;
-    const H = 460;
+    const W = el.clientWidth || 560;
+    const H = 240;
+    const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+    const iW = W - margin.left - margin.right;
+    const iH = H - margin.top - margin.bottom;
+
     svg.attr('width', W).attr('height', H);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const nodes = FD_NODES.map((n) => ({ ...n }));
-    const links = FD_LINKS.map((l) => ({ ...l }));
+    const companies = [
+      { name: 'RDW\n(Full Stack)', ebitdaMargin: 9, color: '#D4A017', label: 'FY2028E proj.' },
+      { name: 'AVAV', ebitdaMargin: 5.2, color: '#4B5563', label: 'FY2025A' },
+      { name: 'KTOS', ebitdaMargin: 7.1, color: '#4B5563', label: 'FY2025A' },
+    ];
 
-    // Custom distance — tightly bind SOFC ↔ Stalker (RDW moat), push competitors far
-    const sim = d3.forceSimulation(nodes as any)
-      .force('link', d3.forceLink(links)
-        .id((d: any) => d.id)
-        .distance((d: any) => d.outsourced ? 200 : d.weight * 22 + 40)
-        .strength((d: any) => d.outsourced ? 0.1 : 0.7))
-      .force('charge', d3.forceManyBody().strength(-320))
-      .force('center', d3.forceCenter(W / 2, H / 2))
-      .force('collision', d3.forceCollide().radius(40));
+    const x = d3.scaleBand().domain(companies.map(c => c.name)).range([0, iW]).padding(0.35);
+    const y = d3.scaleLinear().domain([0, 14]).range([iH, 0]);
 
-    const g = svg.append('g');
+    // Grid
+    g.append('g').call(
+      d3.axisLeft(y).ticks(4).tickFormat(d => `${d}%`)
+    ).selectAll('text').attr('fill', '#4B5563').attr('font-size', '10px').attr('font-family', "'Space Mono', monospace");
+    g.selectAll('.domain').remove();
+    g.selectAll('.tick line').attr('stroke', '#E5E7EB').attr('stroke-dasharray', '3,3');
 
-    // Arrow defs
-    const defs = svg.append('defs');
-    ['#1ABCB4', '#C0392B', '#1E2A3A'].forEach((color, i) => {
-      defs.append('marker')
-        .attr('id', `arrow-${i}`)
-        .attr('markerWidth', 8).attr('markerHeight', 6)
-        .attr('refX', 8).attr('refY', 3)
-        .attr('orient', 'auto')
-        .append('path').attr('d', 'M0,0 L0,6 L8,3 z')
-        .attr('fill', color);
-    });
-
-    const link = g.selectAll('.fd-link')
-      .data(links)
-      .join('line')
-      .attr('class', 'fd-link')
-      .attr('stroke', (d: any) => d.outsourced ? '#C0392B' : '#1E2A3A')
-      .attr('stroke-width', (d: any) => d.outsourced ? 1 : d.weight * 0.8 + 0.5)
-      .attr('stroke-dasharray', (d: any) => d.outsourced ? '6,4' : null)
-      .attr('stroke-opacity', (d: any) => d.outsourced ? 0.35 : 0.6);
-
-    const node = g.selectAll('.fd-node')
-      .data(nodes)
-      .join('g')
-      .attr('class', 'fd-node')
-      .style('cursor', 'pointer')
-      .call(
-        d3.drag<SVGGElement, any>()
-          .on('start', (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-          .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
-          .on('end', (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }) as any
-      );
-
-    node.append('circle')
-      .attr('r', (d: any) => d.type === 'rdw' ? 30 : d.type === 'competitor' ? 22 : 20)
-      .attr('fill', (d: any) => NODE_COLORS[d.type as keyof typeof NODE_COLORS] + '22')
-      .attr('stroke', (d: any) => NODE_COLORS[d.type as keyof typeof NODE_COLORS])
-      .attr('stroke-width', (d: any) => d.type === 'rdw' ? 3 : d.type === 'competitor' ? 1 : 2);
-
-    node.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .attr('font-size', (d: any) => d.type === 'rdw' ? '13px' : '10px')
-      .attr('font-weight', (d: any) => d.type === 'rdw' ? '800' : '600')
-      .attr('fill', (d: any) => NODE_COLORS[d.type as keyof typeof NODE_COLORS])
+    // X axis labels
+    g.append('g')
+      .attr('transform', `translate(0,${iH})`)
+      .call(d3.axisBottom(x).tickSize(0))
+      .selectAll('text')
+      .attr('fill', (_, i) => companies[i].color)
+      .attr('font-size', '11px')
+      .attr('font-weight', '600')
       .attr('font-family', "'Space Grotesk', sans-serif")
-      .text((d: any) => d.label)
-      .style('pointer-events', 'none');
+      .attr('dy', '1.2em');
+    g.select('.domain').remove();
 
-    node
-      .on('mouseover', (event: MouseEvent, d: any) => {
-        setTooltip({ node: d as FDNode, x: event.clientX, y: event.clientY, visible: true });
-      })
-      .on('mousemove', (event: MouseEvent) => setTooltip((t) => ({ ...t, x: event.clientX, y: event.clientY })))
-      .on('mouseout', () => setTooltip((t) => ({ ...t, visible: false })));
+    // Bars
+    companies.forEach(comp => {
+      const bx = x(comp.name)!;
+      const bw = x.bandwidth();
+      const by = y(comp.ebitdaMargin);
+      const bh = iH - by;
 
-    sim.on('tick', () => {
-      link
-        .attr('x1', (d: any) => d.source.x).attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x).attr('y2', (d: any) => d.target.y);
-      node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+      // Bar body
+      g.append('rect')
+        .attr('x', bx).attr('y', by).attr('width', bw).attr('height', bh)
+        .attr('fill', comp.color).attr('opacity', comp.name.startsWith('RDW') ? 0.9 : 0.35)
+        .attr('rx', 4);
+
+      // Value label
+      g.append('text')
+        .attr('x', bx + bw / 2).attr('y', by - 6)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('font-weight', '700')
+        .attr('fill', comp.color).attr('font-family', "'Space Mono', monospace")
+        .text(`${comp.ebitdaMargin}%`);
+
+      // Sub-label
+      g.append('text')
+        .attr('x', bx + bw / 2).attr('y', iH + 36)
+        .attr('text-anchor', 'middle').attr('font-size', '9px')
+        .attr('fill', '#6B7280').attr('font-family', "'Space Mono', monospace")
+        .text(comp.label);
     });
 
-    return () => { sim.stop(); };
+    // RDW advantage annotation
+    const rdwX = x('RDW\n(Full Stack)')! + x.bandwidth() / 2;
+    const ktosMarg = 7.1;
+    g.append('line')
+      .attr('x1', rdwX).attr('y1', y(ktosMarg)).attr('x2', rdwX).attr('y2', y(9))
+      .attr('stroke', '#D4A017').attr('stroke-width', 2).attr('stroke-dasharray', '4,2');
+    g.append('text')
+      .attr('x', rdwX + 8).attr('y', y((ktosMarg + 9) / 2))
+      .attr('dominant-baseline', 'middle').attr('font-size', '9px')
+      .attr('fill', '#D4A017').attr('font-family', "'Space Mono', monospace")
+      .text('+1.9pp advantage');
+
+    // Y axis label
+    g.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -iH / 2).attr('y', -48)
+      .attr('text-anchor', 'middle').attr('font-size', '10px')
+      .attr('fill', '#6B7280').attr('font-family', "'Space Mono', monospace")
+      .text('EBITDA Margin (%)');
+
+  }, []);
+
+  // ── Cost waterfall chart ───────────────────────────────────────────────────
+  useEffect(() => {
+    const el = waterfallRef.current;
+    if (!el) return;
+    const svg = d3.select(el);
+    svg.selectAll('*').remove();
+
+    const W = el.clientWidth || 560;
+    const H = 240;
+    const margin = { top: 20, right: 20, bottom: 70, left: 70 };
+    const iW = W - margin.left - margin.right;
+    const iH = H - margin.top - margin.bottom;
+
+    svg.attr('width', W).attr('height', H);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Compound savings per year
+    const data = COMPOUND_ROWS.map(r => ({
+      year: r.year,
+      saving: Math.round((r.fleet * r.hrsPerUnit * TOTAL_PER_HR) / 1_000_000), // $M
+      marginAdv: r.marginAdv,
+    }));
+
+    const x = d3.scaleBand().domain(data.map(d => d.year)).range([0, iW]).padding(0.3);
+    const y = d3.scaleLinear().domain([0, Math.max(...data.map(d => d.saving)) * 1.15]).range([iH, 0]);
+
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickFormat(d => `$${d}M`))
+      .selectAll('text').attr('fill', '#4B5563').attr('font-size', '10px').attr('font-family', "'Space Mono', monospace");
+    g.selectAll('.domain').remove();
+    g.selectAll('.tick line').attr('stroke', '#E5E7EB').attr('stroke-dasharray', '3,3');
+
+    g.append('g').attr('transform', `translate(0,${iH})`).call(d3.axisBottom(x).tickSize(0))
+      .selectAll('text').attr('fill', '#1F2937').attr('font-size', '11px')
+      .attr('font-weight', '600').attr('font-family', "'Space Grotesk', sans-serif").attr('dy', '1.2em');
+    g.select('.domain').remove();
+
+    // Gradient fills
+    const defs = svg.append('defs');
+    const grad = defs.append('linearGradient').attr('id', 'saving-grad')
+      .attr('x1', '0').attr('y1', '0').attr('x2', '0').attr('y2', '1');
+    grad.append('stop').attr('offset', '0%').attr('stop-color', '#D4A017').attr('stop-opacity', 0.9);
+    grad.append('stop').attr('offset', '100%').attr('stop-color', '#D4A017').attr('stop-opacity', 0.4);
+
+    data.forEach((d, i) => {
+      const bx = x(d.year)!;
+      const bw = x.bandwidth();
+      const by = y(d.saving);
+      const bh = iH - by;
+
+      g.append('rect').attr('x', bx).attr('y', by).attr('width', bw).attr('height', bh)
+        .attr('fill', 'url(#saving-grad)').attr('rx', 4);
+
+      // Value
+      g.append('text').attr('x', bx + bw / 2).attr('y', by - 7)
+        .attr('text-anchor', 'middle').attr('font-size', '12px').attr('font-weight', '700')
+        .attr('fill', '#D4A017').attr('font-family', "'Space Mono', monospace")
+        .text(`$${d.saving}M`);
+
+      // Margin advantage badge below bar
+      g.append('text').attr('x', bx + bw / 2).attr('y', iH + 38)
+        .attr('text-anchor', 'middle').attr('font-size', '9px')
+        .attr('fill', '#10B981').attr('font-family', "'Space Mono', monospace")
+        .text(`+${d.marginAdv}pp margin`);
+
+      // Growth arrow between bars
+      if (i > 0) {
+        const prev = data[i - 1];
+        const prevBx = x(prev.year)! + x.bandwidth();
+        const midX = (prevBx + bx) / 2;
+        const midY = y((prev.saving + d.saving) / 2) - 10;
+        g.append('text').attr('x', midX).attr('y', midY)
+          .attr('text-anchor', 'middle').attr('font-size', '9px')
+          .attr('fill', '#10B981').attr('font-family', "'Space Mono', monospace")
+          .text(`↑${((d.saving / prev.saving - 1) * 100).toFixed(0)}%`);
+      }
+    });
+
+    // Y axis label
+    g.append('text').attr('transform', 'rotate(-90)')
+      .attr('x', -iH / 2).attr('y', -58)
+      .attr('text-anchor', 'middle').attr('font-size', '10px')
+      .attr('fill', '#6B7280').attr('font-family', "'Space Mono', monospace")
+      .text('Annual Fleet-Level Cost Advantage ($M)');
+
   }, []);
 
   return (
@@ -149,114 +262,147 @@ export default function FuelCellPage() {
         <div className="mb-8">
           <div className="section-eyebrow">Page 6 — Vertical Integration</div>
           <h2 className="section-title mb-4">
-            The In-House Power Stack.<br />
-            <span className="text-gradient-gold">Why AVAV & KTOS Can't Compete.</span>
+            Where Competitors Leak Margin.<br />
+            <span className="text-gradient-gold">Where RDW Compounds It.</span>
           </h2>
           <p className="section-subtitle max-w-3xl">
-            <GlossaryTooltip term="SOFC (Solid Oxide Fuel Cell)" definition="An electrochemical device that converts the chemical energy of hydrogen or hydrocarbon fuels (like JP-8 jet fuel) directly into electricity with ~60% efficiency — roughly twice that of combustion engines. Produces no moving parts, zero sound signature, and heat as its only byproduct. Critical for long-endurance drones that must operate silently and for extended periods.">
-              Redwire's SOFC power stack
+            <GlossaryTooltip term="SOFC (Solid Oxide Fuel Cell)" definition="An electrochemical device that converts hydrogen or JP-8 fuel directly into electricity at ~60% efficiency — roughly twice that of combustion engines. No moving parts, zero acoustic signature. Critical for long-endurance silent drones. RDW builds this in-house via Edge Autonomy; AVAV and KTOS source externally.">
+              Redwire's vertical integration
             </GlossaryTooltip>{' '}
-            is wholly owned via Edge Autonomy. Competitors outsource this component, creating supply chain dependency, lower margins, and inferior endurance specs. Node distance = synergy tightness. Dashed red lines = outsourced dependency.
+            creates five structural cost advantages that competitors cannot replicate without their own manufacturing infrastructure.
+            Each advantage compounds as the fleet scales — shown below. Click any advantage card for detail.
           </p>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {/* Advantage cards — click for detail */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-8">
+          {COST_ADVANTAGES.map((adv) => (
+            <button
+              key={adv.id}
+              onClick={() => setActiveAdv(activeAdv?.id === adv.id ? null : adv)}
+              className="glass-card p-3 text-left transition-all hover:scale-105"
+              style={{
+                borderTop: `3px solid ${adv.color}`,
+                boxShadow: activeAdv?.id === adv.id ? `0 0 16px ${adv.color}40` : undefined,
+                borderColor: activeAdv?.id === adv.id ? adv.color : 'var(--card-border)',
+              }}
+            >
+              <div className="text-[11px] font-mono font-bold mb-1" style={{ color: adv.color }}>
+                +${adv.rdwSaving}/hr
+              </div>
+              <div className="text-[11px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                {adv.label}
+              </div>
+              <div className="text-[10px] mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>
+                vs {adv.competitor}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Active advantage detail panel */}
+        {activeAdv && (
+          <div
+            className="glass-card p-5 mb-6"
+            style={{ borderLeft: `4px solid ${activeAdv.color}` }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-[10px] font-mono tracking-[3px] uppercase mb-1" style={{ color: activeAdv.color }}>
+                  Cost Advantage Detail
+                </div>
+                <div className="font-semibold text-[15px] mb-2" style={{ color: 'var(--text-primary)' }}>
+                  {activeAdv.label}
+                </div>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  {activeAdv.explanation}
+                </p>
+              </div>
+              <div className="flex-shrink-0 text-right">
+                <div className="text-[26px] font-black font-mono" style={{ color: activeAdv.color }}>
+                  +${(activeAdv.annualFleetSaving / 1000).toFixed(0)}M
+                </div>
+                <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                  est. annual fleet savings
+                </div>
+                <div className="text-[10px] font-mono mt-1" style={{ color: 'var(--text-muted)' }}>
+                  (100 units × 1,000 hrs/yr)
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Two charts: EBITDA margin comparison + Compound savings growth */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <div className="section-eyebrow mb-2">EBITDA Margin: RDW vs Peers (FY2028E Projection)</div>
+            <div className="glass-card p-4">
+              <svg ref={barRef} className="w-full" style={{ height: 240 }} />
+            </div>
+            <p className="text-[10px] mt-2 font-mono text-center" style={{ color: 'var(--text-muted)' }}>
+              RDW FY2028E EBITDA margin guided at +9% — above both current peer levels, driven by vertical integration compressing input costs
+            </p>
+          </div>
+
+          <div>
+            <div className="section-eyebrow mb-2">Compound Cost Advantage as Fleet Scales</div>
+            <div className="glass-card p-4">
+              <svg ref={waterfallRef} className="w-full" style={{ height: 240 }} />
+            </div>
+            <p className="text-[10px] mt-2 font-mono text-center" style={{ color: 'var(--text-muted)' }}>
+              Fleet-level annual advantage compounds as unit count grows — each deployed platform generates recurring margin that competitors cannot match
+            </p>
+          </div>
+        </div>
+
+        {/* Total advantage summary row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'SOFC Efficiency', value: '60%', sub: 'vs 30–40% battery', color: '#D4A017' },
-            { label: 'Stalker XE Endurance', value: '10hr', sub: 'vs 2–3hr competitors', color: '#1ABCB4' },
-            { label: 'Estimated Cost Advantage', value: '~30%', sub: 'per flight hour vs AVAV/KTOS', color: '#D4A017' },
-            { label: 'Supply Chain Dependencies', value: '0', sub: 'for power stack (in-house)', color: '#4CAF50' },
+            { label: 'Total Cost Advantage', value: `$${TOTAL_PER_HR}/hr`, sub: 'per platform vs AVAV/KTOS', color: '#D4A017' },
+            { label: 'Est. Fleet Advantage (FY25)', value: `$${(TOTAL_FLEET / 1000).toFixed(0)}M/yr`, sub: '200 units × 800 hrs', color: '#1ABCB4' },
+            { label: 'SOFC Endurance Lead', value: '3–5×', sub: '8–10hr vs 2–3hr battery', color: '#C0392B' },
+            { label: 'Supply Chain Dependencies', value: '0', sub: 'for power stack (fully in-house)', color: '#10B981' },
           ].map((s) => (
             <div key={s.label} className="metric-card text-center">
               <div className="metric-value" style={{ color: s.color }}>{s.value}</div>
               <div className="metric-label">{s.label}</div>
-              <div className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>{s.sub}</div>
+              <div className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{s.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap gap-4 mb-3 text-[11px] font-mono">
-          {Object.entries(NODE_COLORS).map(([type, color]) => (
-            <div key={type} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full" style={{ background: color }} />
-              <span className="capitalize" style={{ color: "var(--text-muted)" }}>{type === 'rdw' ? 'RDW Core' : type}</span>
-            </div>
-          ))}
-          <div className="flex items-center gap-1.5">
-            <div className="w-8 border-t border-dashed border-[#C0392B]" />
-            <span className="" style={{ color: "var(--text-muted)" }}>Outsourced dependency</span>
-          </div>
-        </div>
-
-        <div className="glass-card p-4 relative">
-          <svg ref={svgRef} className="w-full" style={{ height: 460 }} />
-        </div>
-
-        <p className="text-[11px] mt-3 text-center font-mono" style={{ color: "var(--text-muted)" }}>
-          Drag nodes · Hover for detail · Tight = high synergy · Loose = low integration
-        </p>
-
-        {/* Comparison table */}
-        <div className="mt-8 overflow-x-auto rounded-xl border border-[#1E2A3A]">
-          <table className="data-table w-full" data-testid="fuecell-comparison">
+        {/* Competitor comparison table */}
+        <div className="mt-8 overflow-x-auto rounded-xl" style={{ border: '1px solid var(--card-border)' }}>
+          <table className="data-table w-full">
             <thead>
               <tr>
-                <th className="text-left">Dimension</th>
-                <th className="text-left" style={{ color: '#D4A017' }}>RDW / Edge Autonomy</th>
-                <th className="text-left" style={{ color: '#C0392B' }}>AeroVironment (AVAV)</th>
-                <th className="text-left" style={{ color: '#C0392B' }}>Kratos (KTOS)</th>
+                <th className="text-left">Capability</th>
+                <th className="text-center">RDW (Edge Autonomy)</th>
+                <th className="text-center">AeroVironment (AVAV)</th>
+                <th className="text-center">Kratos (KTOS)</th>
               </tr>
             </thead>
             <tbody>
               {[
-                ['Power Source', 'In-house SOFC (owned)', 'Third-party batteries', 'Third-party turbines'],
-                ['UAS Endurance', '8–10 hours', '3–5 hours (Puma AE)', '2–4 hours'],
-                ['Margin on Power', '~60–65% (internal)', '30–40% (outsourced)', '35–45% (outsourced)'],
-                ['Supply Chain Risk', 'None (single supplier = self)', 'High — battery commodity', 'Medium — turbine sourcing'],
-                ['EV/Revenue 2026E', '~1.3x (RDW)', '~4.2x (AVAV)', '~3.8x (KTOS)'],
-              ].map(([cat, rdw, avav, ktos]) => (
-                <tr key={cat}>
-                  <td className="font-semibold text-[12px]" style={{ color: "var(--text-primary)" }}>{cat}</td>
-                  <td className="text-[#D4A017] font-semibold">{rdw}</td>
-                  <td className="" style={{ color: "var(--text-muted)" }}>{avav}</td>
-                  <td className="" style={{ color: "var(--text-muted)" }}>{ktos}</td>
+                ['Power Stack', '✓ In-house SOFC', '✗ 3rd-party battery', '✗ External turbine'],
+                ['UAS Endurance', '8–10 hours', '1.5–3 hours', '1–4 hours'],
+                ['Export Control Owner', '✓ Full ITAR stack', '✗ Multi-vendor dependency', '✗ Multi-vendor dependency'],
+                ['Space Power Integration', '✓ iROSA (self-powered)', '✗ Not applicable', '✗ Not applicable'],
+                ['EBITDA Margin (FY28E)', '~9% projected', '~5% current', '~7% current'],
+                ['DoD Production Facility', '✓ 85,000 sq ft (Ann Arbor)', '✗ Outsourced', '✗ Outsourced'],
+              ].map(([cap, rdw, avav, ktos]) => (
+                <tr key={cap}>
+                  <td className="font-semibold" style={{ color: 'var(--text-primary)' }}>{cap}</td>
+                  <td className="text-center text-[12px]" style={{ color: rdw.startsWith('✓') ? '#10B981' : 'var(--text-secondary)' }}>{rdw}</td>
+                  <td className="text-center text-[12px]" style={{ color: avav.startsWith('✗') ? 'var(--rdw-red)' : 'var(--text-secondary)' }}>{avav}</td>
+                  <td className="text-center text-[12px]" style={{ color: ktos.startsWith('✗') ? 'var(--rdw-red)' : 'var(--text-secondary)' }}>{ktos}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-
-      {/* Tooltip */}
-      {tooltip.visible && tooltip.node && (
-        <div
-          style={{
-            position: 'fixed',
-            left: tooltip.x + 14,
-            top: tooltip.y - 8,
-            zIndex: 9999,
-            background: 'rgba(13,17,23,0.97)',
-            border: `1px solid ${NODE_COLORS[tooltip.node.type as keyof typeof NODE_COLORS]}`,
-            borderRadius: 8,
-            padding: '12px 16px',
-            fontSize: 13,
-            maxWidth: 280,
-            color: 'var(--text-primary)',
-            pointerEvents: 'none',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-          }}
-        >
-          <div className="font-bold mb-1" style={{ color: NODE_COLORS[tooltip.node.type as keyof typeof NODE_COLORS] }}>
-            {tooltip.node.label}
-          </div>
-          <div className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{tooltip.node.description}</div>
-          {tooltip.node.inhouse && (
-            <div className="mt-2 text-[11px] text-[#1ABCB4] font-semibold">✓ Fully In-House</div>
-          )}
-        </div>
-      )}
     </section>
   );
 }

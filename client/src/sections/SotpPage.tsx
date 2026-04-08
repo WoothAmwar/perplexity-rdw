@@ -184,11 +184,20 @@ export default function SotpPage() {
                   { method: 'SOTP (Premium-Sourced)', value: '$18.01', weight: '65%', contrib: '$11.71', color: 'var(--rdw-red)' },
                   { method: 'DCF (Two-Stage, 11% WACC)', value: '$6.06', weight: '35%', contrib: '$2.12', color: '#0EA5E9' },
                   { method: 'Blended Base Value', value: '', weight: '', contrib: '$13.83', color: 'var(--text-primary)' },
-                  { method: 'Catalyst Premium', value: '+$2.17', weight: '', contrib: '', color: '#10B981' },
+                  { method: 'catalystPremium', value: '+$2.17', weight: '', contrib: '', color: '#10B981' },
                 ].map((row, i) => (
                   <div key={i} className="flex items-center justify-between py-2"
                     style={{ borderBottom: i < 3 ? '1px solid var(--card-border)' : 'none' }}>
-                    <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>{row.method}</span>
+                    <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+                      {row.method === 'catalystPremium' ? (
+                        <GlossaryTooltip
+                          term="Catalyst Premium"
+                          definition="An additive premium applied to the blended base value to reflect the near-term probability-weighted impact of specific binary events — namely: (1) DoD fuel cell UAS contract award expected H1 2026, (2) EuroQCI Phase 2 milestone payment, and (3) ISS commercial transition contract. Each event is assigned a probability and expected incremental NPV; the sum ($2.17/share) is added to the blended DCF/SOTP base to arrive at the $16.00 price target."
+                        >
+                          Catalyst Premium
+                        </GlossaryTooltip>
+                      ) : row.method}
+                    </span>
                     <div className="flex items-center gap-4 text-right">
                       {row.weight && <span className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>{row.weight}</span>}
                       <span className="text-[15px] font-bold font-mono" style={{ color: row.color }}>

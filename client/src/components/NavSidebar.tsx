@@ -9,6 +9,7 @@ const PAGES = [
   { id: 'pharma', label: 'Pharma' },
   { id: 'fuelcell', label: 'Fuel Cell' },
   { id: 'space', label: 'Space R&D' },
+  { id: 'backlog-map', label: 'Backlog Map' },
   { id: 'revenue', label: 'Revenue' },
   { id: 'ebitda', label: 'EBITDA' },
   { id: 'delever', label: 'Debt' },

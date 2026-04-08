@@ -18,8 +18,8 @@ const pillars = [
     icon: '🧬',
     headline: '43 PIL-BOX Trials',
     body: 'Redwire\'s PIL-BOX system exploits microgravity to grow pharmaceutical crystals with an 84% improvement rate. This transforms drugs like Keytruda ($29.5B peak revenue) from IV infusions into sub-Q injections. 43 units flown, 35+ molecules studied, BMS/Purdue/Butler partnerships active. With >$45B/year in failed trials [CB Insights] and $1–2B/drug development costs, the demand for novel formulations is structural.',
-    stat: '$29.5B',
-    statLabel: 'Keytruda Peak Rev',
+    stat: '$270M',
+    statLabel: 'PIL-BOX SOTP Segment Value',
   },
   {
     number: '03',
@@ -38,8 +38,8 @@ const pillars = [
     icon: '🔐',
     headline: 'Hammerhead + EuroQCI',
     body: 'NIST finalized post-quantum cryptography standards in 2024. Q-Day — when quantum computers crack RSA encryption — is consensus-estimated at 2029. Redwire\'s Hammerhead satellite and EuroQCI contract lock in the physical quantum-key distribution infrastructure before the deadline. This is a winner-take-all positioning moment.',
-    stat: '$9.8B',
-    statLabel: 'Quantum TAM by 2030 [Statista]',
+    stat: '$20M',
+    statLabel: 'EuroQCI 2026E Revenue @ 15x → $300M Seg',
   },
 ];
 

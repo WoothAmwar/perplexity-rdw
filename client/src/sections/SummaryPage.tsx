@@ -39,17 +39,36 @@ export default function SummaryPage() {
     <section id="summary" className="page-section">
       <div className="max-w-7xl mx-auto px-8">
         {/* flex-col layout: header top */}
-        <div className="section-layout-col mb-12">
-          <div className="mb-8">
+        <div className="section-layout-col mb-10">
+          <div className="mb-6">
             <div className="section-eyebrow">Executive Summary</div>
             <h2 className="section-title mb-4">
-              The Numbers,<br />
-              <span className="text-gradient-red">Before the Story.</span>
+              From Researcher<br />
+              <span className="text-gradient-red">to Producer.</span>
             </h2>
-            <p className="section-subtitle max-w-3xl">
-              Verified against the April 6, 2026 memo and live market data.
-              All figures sourced from Redwire SEC filings and premium data providers.
-            </p>
+            {/* Transformation narrative + valuation discount */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-5xl">
+              <div>
+                <p className="section-subtitle">
+                  Redwire was founded as an aggregator of NASA-heritage technology. That era is ending.
+                  Q4 2025 marked the company's first segment-level production reporting — Defense Technology
+                  at $54.3M, Space Infrastructure at $54.5M — signaling the shift from{' '}
+                  <span style={{ color: 'var(--rdw-red)', fontWeight: 600 }}>contract researcher to volume producer</span>.
+                  The Ann Arbor manufacturing facility (85,000 sq ft, opened Nov 2025) and the DoD SOFC
+                  production pipeline are proof points that this transition is structural, not cyclical.
+                </p>
+              </div>
+              <div className="glass-card p-4" style={{ borderLeft: '4px solid #D4A017' }}>
+                <div className="text-[10px] font-mono tracking-[3px] uppercase mb-2" style={{ color: '#D4A017' }}>Discount to Intrinsic Value</div>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Despite this transition, RDW trades at <strong style={{ color: 'var(--rdw-red)' }}>3.3x FWD EV/Sales</strong> — 
+                  a 56% discount to KTOS and 30% discount to AVAV.
+                  Our SOTP analysis implies <strong style={{ color: '#D4A017' }}>$18.01 intrinsic value</strong> vs 
+                  the $9.56 current price. The market is pricing in the researcher.
+                  We are valuing the producer.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -102,7 +121,10 @@ export default function SummaryPage() {
         {/* Business segments — Q4 2025 first-ever segment reporting */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
           <div>
-            <div className="section-eyebrow mb-4">Q4 2025 — First Segment Reporting</div>
+            <div className="section-eyebrow mb-1">Q4 2025 — First Segment Reporting</div>
+            <p className="text-[11px] mb-4 font-mono" style={{ color: 'var(--text-muted)' }}>
+              Bar = % of total Q4 2025 revenue · Hover “B/B” for Book-to-Bill definition
+            </p>
             <div className="space-y-4">
               {segments.map((s) => (
                 <div key={s.name} className="glass-card p-5">
@@ -121,7 +143,14 @@ export default function SummaryPage() {
                   </div>
                   <div className="flex gap-4 mb-3 text-[11px]">
                     <span style={{ color: 'var(--text-muted)' }}>Backlog: <span className="font-mono font-bold" style={{ color: 'var(--text-secondary)' }}>{s.backlog}</span></span>
-                    <span style={{ color: 'var(--text-muted)' }}>B/B: <span className="font-mono font-bold" style={{ color: s.color }}>{s.bToB}</span></span>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      <GlossaryTooltip
+                        term="Book-to-Bill Ratio (B/B)"
+                        definition="New orders received ÷ revenue billed in the same period. A ratio above 1.0x means the order backlog is growing faster than revenue — a leading indicator of future sales. B/B of 2.04x means Space Infrastructure is booking $2.04 of new contracts for every $1 of revenue shipped."
+                      >
+                        B/B
+                      </GlossaryTooltip>: <span className="font-mono font-bold" style={{ color: s.color }}>{s.bToB}</span>
+                    </span>
                   </div>
                   <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
                 </div>
