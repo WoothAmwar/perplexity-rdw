@@ -587,3 +587,48 @@
   background: rgba(16,185,129,0.12);
   border-color: rgba(16,185,129,0.35);
 }
+
+/* ═══════════════════════════════════════════════
+   LEAFLET OVERRIDES — BacklogMapPage
+   ═══════════════════════════════════════════════ */
+
+/* Hide default Leaflet tooltip arrow and box for bubble labels */
+.leaflet-bubble-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.leaflet-bubble-label::before {
+  display: none !important;
+}
+
+/* Hover tooltip styling */
+.leaflet-hover-tooltip {
+  background: var(--card-bg) !important;
+  border: 1.5px solid rgba(200,16,46,0.35) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans) !important;
+}
+.leaflet-hover-tooltip::before {
+  display: none !important;
+}
+
+/* Remove blue focus ring on map tiles */
+.leaflet-container:focus {
+  outline: none;
+}
+
+/* Make zoom controls match app theme */
+.leaflet-control-zoom a {
+  background: var(--card-bg) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--card-border) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--card-border) !important;
+  color: var(--rdw-red) !important;
+}

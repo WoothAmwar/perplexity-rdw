@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import * as d3 from 'd3';
+import { MapContainer, CircleMarker, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 import { useTheme } from '../App';
-// Static import — bundled at build time, no runtime fetch needed
-import worldGeoJson from '../assets/world.geo.json';
 
 // RDW backlog by country — total contracted backlog $411.2M
 const BACKLOG_COUNTRIES = [
   {
-    hcKey: 'us',
     id: 'USA',
     name: 'United States',
     lat: 38,
@@ -19,7 +18,6 @@ const BACKLOG_COUNTRIES = [
     programs: ['NASA ISS (iROSA/ELSA)', 'DoD / US SOF Stalker UAS', 'Axiom Station', 'Edge Autonomy SOFC production'],
   },
   {
-    hcKey: 'be',
     id: 'BEL',
     name: 'Belgium / EU',
     lat: 50.8,
@@ -30,7 +28,6 @@ const BACKLOG_COUNTRIES = [
     programs: ['EuroQCI Phase 1 complete', "MATTEO — Belgium's first national security satellite (prime contractor)"],
   },
   {
-    hcKey: 'gb',
     id: 'GBR',
     name: 'United Kingdom',
     lat: 53.0,
@@ -41,7 +38,6 @@ const BACKLOG_COUNTRIES = [
     programs: ['QKDSat quantum comms backbone', 'NATO allied UAS deliveries'],
   },
   {
-    hcKey: 'ua',
     id: 'UKR',
     name: 'Ukraine',
     lat: 49.0,
@@ -52,7 +48,6 @@ const BACKLOG_COUNTRIES = [
     programs: ['Stalker XE tactical UAS — 200+ deployed in active theater'],
   },
   {
-    hcKey: 'ae',
     id: 'UAE',
     name: 'UAE / Gulf',
     lat: 24.0,
@@ -63,7 +58,6 @@ const BACKLOG_COUNTRIES = [
     programs: ['Commercial satellite infrastructure', 'ISR systems integration'],
   },
   {
-    hcKey: 'jp',
     id: 'JPN',
     name: 'Japan',
     lat: 36.0,
@@ -74,7 +68,6 @@ const BACKLOG_COUNTRIES = [
     programs: ['JAXA ISS collaboration', 'Microgravity pharma trials (PIL-BOX)'],
   },
   {
-    hcKey: 'au',
     id: 'AUS',
     name: 'Australia',
     lat: -25.0,
@@ -86,207 +79,63 @@ const BACKLOG_COUNTRIES = [
   },
 ];
 
-// Map hcKey → country data for hover
-const COUNTRY_MAP: Record<string, typeof BACKLOG_COUNTRIES[0]> = {};
-BACKLOG_COUNTRIES.forEach((c) => { COUNTRY_MAP[c.hcKey] = c; });
-
-// ISO Alpha-2 → hcKey (Highcharts uses mostly lowercase iso-a2)
-// We'll match GeoJSON iso-a2 field against our hcKey
-const ISO2_TO_HCKey: Record<string, string> = {
-  US: 'us', BE: 'be', GB: 'gb', UA: 'ua', AE: 'ae', JP: 'jp', AU: 'au',
+// Scale radius: sqrt scale so area ∝ value, at 80% of previous sizes
+const rScale = (value: number) => {
+  const minR = 18 * 0.8, maxR = 70 * 0.8;
+  const minV = 10, maxV = 245;
+  return minR + (maxR - minR) * Math.sqrt((value - minV) / (maxV - minV));
 };
 
-const rScale = d3.scaleSqrt().domain([0, 245]).range([8, 50]);
+// Tile URLs for light / dark
+const TILE_LIGHT =
+  'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+const TILE_DARK =
+  'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
+const TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>';
+
+// Component to swap tile layer when theme changes
+function ThemeAwareTile({ dark }: { dark: boolean }) {
+  const map = useMap();
+  const tileRef = useRef<L.TileLayer | null>(null);
+
+  useEffect(() => {
+    if (tileRef.current) {
+      map.removeLayer(tileRef.current);
+    }
+    const layer = L.tileLayer(dark ? TILE_DARK : TILE_LIGHT, {
+      attribution: TILE_ATTRIBUTION,
+      maxZoom: 19,
+    }).addTo(map);
+    tileRef.current = layer;
+
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [dark, map]);
+
+  return null;
+}
+
+// Tracks mouse position relative to the map container for the DOM tooltip
+function MouseTracker({ onMove }: { onMove: (pos: { x: number; y: number } | null) => void }) {
+  const map = useMapEvents({
+    mousemove(e) {
+      const rect = map.getContainer().getBoundingClientRect();
+      onMove({ x: e.originalEvent.clientX - rect.left, y: e.originalEvent.clientY - rect.top });
+    },
+    mouseout() {
+      onMove(null);
+    },
+  });
+  return null;
+}
 
 export default function BacklogMapPage() {
   const { dark } = useTheme();
-  const svgRef = useRef<SVGSVGElement>(null);
   const [hovered, setHovered] = useState<typeof BACKLOG_COUNTRIES[0] | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [geoData, setGeoData] = useState<any>(null);
-
-  // Load GeoJSON once — use BASE_URL so it works both locally and on the deployed proxy path
-  useEffect(() => {
-    const base = import.meta.env.BASE_URL ?? '/';
-    const url = base.endsWith('/') ? `${base}world.geo.json` : `${base}/world.geo.json`;
-    fetch(url)
-      .then((r) => {
-        if (!r.ok) throw new Error(`GeoJSON fetch failed: ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        // Handle both FeatureCollection and raw array
-        if (data && Array.isArray(data.features)) {
-          setGeoData(data);
-        } else if (Array.isArray(data)) {
-          setGeoData({ type: 'FeatureCollection', features: data });
-        } else {
-          console.error('Unexpected GeoJSON shape:', Object.keys(data));
-        }
-      })
-      .catch((err) => console.error('BacklogMap GeoJSON load error:', err));
-  }, []);
-
-  // Redraw map whenever geoData or theme changes
-  useEffect(() => {
-    const el = svgRef.current;
-    if (!el || !geoData) return;
-
-    const svg = d3.select(el);
-    svg.selectAll('*').remove();
-
-    const W = el.clientWidth || 820;
-    const H = Math.round(W * 0.50);
-    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('width', W).attr('height', H);
-
-    // Equirectangular projection — clean, flat, realistic country shapes
-    const projection = d3.geoNaturalEarth1()
-      .scale(W / 6.3)
-      .translate([W / 2, H / 2]);
-
-    const path = d3.geoPath().projection(projection);
-
-    // Sphere background (ocean)
-    svg.append('path')
-      .datum({ type: 'Sphere' } as any)
-      .attr('d', path as any)
-      .attr('fill', dark ? '#0d1b2a' : '#dce8f5');
-
-    // Graticule
-    svg.append('path')
-      .datum(d3.geoGraticule()())
-      .attr('d', path as any)
-      .attr('fill', 'none')
-      .attr('stroke', dark ? '#1e2f40' : '#c9d8e8')
-      .attr('stroke-width', 0.3)
-      .attr('stroke-opacity', 0.6);
-
-    // Country fills — color highlighted countries, neutral for others
-    svg.append('g')
-      .selectAll('path')
-      .data(geoData.features)
-      .join('path')
-      .attr('d', (d: any) => path(d as any) || '')
-      .attr('fill', (d: any) => {
-        const iso2 = d.properties['iso-a2'];
-        const hcKey = ISO2_TO_HCKey[iso2];
-        if (hcKey && COUNTRY_MAP[hcKey]) {
-          return COUNTRY_MAP[hcKey].color + '28'; // ~16% tint
-        }
-        return dark ? '#1a2a3a' : '#e2e9f1';
-      })
-      .attr('stroke', dark ? '#28394d' : '#b4c4d4')
-      .attr('stroke-width', 0.4);
-
-    // Sphere border
-    svg.append('path')
-      .datum({ type: 'Sphere' } as any)
-      .attr('d', path as any)
-      .attr('fill', 'none')
-      .attr('stroke', dark ? '#2d4560' : '#9db8ce')
-      .attr('stroke-width', 0.8);
-
-    // ── Bubbles ──────────────────────────────────────────────────────────────
-    const bubbleGroup = svg.append('g').attr('class', 'bubbles');
-
-    BACKLOG_COUNTRIES.forEach((c) => {
-      const coords = projection([c.lon, c.lat]);
-      if (!coords) return;
-      const [cx, cy] = coords;
-      const r = rScale(c.value);
-
-      const g = bubbleGroup.append('g')
-        .style('cursor', 'pointer')
-        .on('mouseenter', (event: MouseEvent) => {
-          const rect = el.getBoundingClientRect();
-          setHovered(c);
-          setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
-        })
-        .on('mousemove', (event: MouseEvent) => {
-          const rect = el.getBoundingClientRect();
-          setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
-        })
-        .on('mouseleave', () => setHovered(null));
-
-      // Pulse glow ring
-      g.append('circle')
-        .attr('cx', cx).attr('cy', cy)
-        .attr('r', r + 6)
-        .attr('fill', c.color)
-        .attr('fill-opacity', 0.09)
-        .attr('stroke', 'none');
-
-      // Main bubble
-      g.append('circle')
-        .attr('cx', cx).attr('cy', cy)
-        .attr('r', r)
-        .attr('fill', c.color)
-        .attr('fill-opacity', 0.58)
-        .attr('stroke', c.color)
-        .attr('stroke-width', 1.8)
-        .attr('stroke-opacity', 0.9);
-
-      // ID label inside bubble (only when large enough)
-      if (r >= 12) {
-        g.append('text')
-          .attr('x', cx).attr('y', cy)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-          .attr('font-size', r >= 22 ? '11px' : '9px')
-          .attr('font-weight', '700')
-          .attr('font-family', "'Space Mono', monospace")
-          .attr('fill', 'white')
-          .attr('fill-opacity', 0.95)
-          .attr('pointer-events', 'none')
-          .text(c.id);
-      }
-
-      // $M label below bubble
-      if (r >= 10) {
-        g.append('text')
-          .attr('x', cx).attr('y', cy + r + 12)
-          .attr('text-anchor', 'middle')
-          .attr('font-size', '9px')
-          .attr('font-weight', '600')
-          .attr('font-family', "'Space Mono', monospace")
-          .attr('fill', c.color)
-          .attr('fill-opacity', 0.92)
-          .attr('pointer-events', 'none')
-          .text(`$${c.value}M`);
-      }
-    });
-
-    // Pulse animation on USA (dominant)
-    const usaCoords = projection([-100, 38]);
-    if (usaCoords) {
-      const [ux, uy] = usaCoords;
-      const ur = rScale(245);
-      const pulseCircle = svg.append('circle')
-        .attr('cx', ux).attr('cy', uy)
-        .attr('r', ur)
-        .attr('fill', 'none')
-        .attr('stroke', '#C8102E')
-        .attr('stroke-width', 1.5)
-        .attr('pointer-events', 'none');
-
-      const doPulse = () => {
-        pulseCircle
-          .attr('r', ur).attr('opacity', 0.5)
-          .transition().duration(2200).ease(d3.easeSinOut)
-          .attr('r', ur + 16).attr('opacity', 0)
-          .on('end', doPulse);
-      };
-      doPulse();
-    }
-  }, [dark, geoData]);
-
-  // Tooltip position clamped inside SVG
-  const tt = hovered;
-  const svgW = svgRef.current?.clientWidth ?? 820;
-  const svgH = svgRef.current?.clientHeight ?? 410;
-  const ttW = 260, ttH = 100;
-  const ttX = Math.min(Math.max(tooltipPos.x + 14, 4), svgW - ttW - 4);
-  const ttY = tooltipPos.y > svgH * 0.65 ? tooltipPos.y - ttH - 14 : tooltipPos.y + 14;
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   return (
     <section id="backlog-map" className="page-section">
@@ -318,48 +167,122 @@ export default function BacklogMapPage() {
               <div className="section-eyebrow mb-2 text-[10px]">
                 Backlog by Geography · Circle area ∝ $M committed · Hover for program detail
               </div>
-              <div className="relative">
-                {!geoData && (
-                  <div className="flex items-center justify-center" style={{ height: 300, color: 'var(--text-muted)', fontSize: 12 }}>
-                    Loading map…
-                  </div>
-                )}
-                <svg
-                  ref={svgRef}
-                  className="w-full rounded-lg"
-                  style={{ minHeight: 260, display: geoData ? 'block' : 'none' }}
-                  aria-label="Global backlog heatmap"
-                />
-                {/* Theme-aware DOM tooltip */}
-                {tt && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: ttX,
-                      top: ttY,
-                      zIndex: 50,
-                      background: 'var(--card-bg)',
-                      border: `1.5px solid ${tt.color}`,
-                      borderRadius: 8,
-                      padding: '10px 14px',
-                      maxWidth: ttW,
-                      pointerEvents: 'none',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-                    }}
-                  >
-                    <div className="text-[12px] font-bold mb-0.5" style={{ color: tt.color }}>
-                      {tt.name}
-                    </div>
-                    <div className="text-[11px] font-mono font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                      ${tt.value}M · {tt.pct}% of backlog
-                    </div>
-                    {tt.programs.map((p, i) => (
-                      <div key={i} className="text-[10px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-                        · {p}
+
+              {/* Leaflet map */}
+              <div ref={mapContainerRef} style={{ height: 380, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                <MapContainer
+                  center={[30, 15]}
+                  zoom={2}
+                  minZoom={2}
+                  maxZoom={5}
+                  scrollWheelZoom={false}
+                  zoomControl={true}
+                  style={{ height: '100%', width: '100%', background: dark ? '#0d1b2a' : '#dce8f5' }}
+                  worldCopyJump={false}
+                  maxBounds={[[-85, -180], [85, 180]]}
+                  maxBoundsViscosity={1.0}
+                  attributionControl={false}
+                >
+                  <ThemeAwareTile dark={dark} />
+                  <MouseTracker onMove={(pos) => { if (!pos) setMousePos(null); else setMousePos(pos); }} />
+
+                  {BACKLOG_COUNTRIES.map((c) => (
+                    <CircleMarker
+                      key={c.id}
+                      center={[c.lat, c.lon]}
+                      radius={rScale(c.value)}
+                      pathOptions={{
+                        color: c.color,
+                        fillColor: c.color,
+                        fillOpacity: hovered && hovered.id !== c.id ? 0.18 : 0.55,
+                        weight: hovered?.id === c.id ? 2.5 : 1.8,
+                        opacity: hovered && hovered.id !== c.id ? 0.35 : 0.95,
+                      }}
+                      eventHandlers={{
+                        mouseover: (e) => {
+                          setHovered(c);
+                          const rect = (e.target as any)._map.getContainer().getBoundingClientRect();
+                          setMousePos({ x: e.originalEvent.clientX - rect.left, y: e.originalEvent.clientY - rect.top });
+                        },
+                        mousemove: (e) => {
+                          const rect = (e.target as any)._map.getContainer().getBoundingClientRect();
+                          setMousePos({ x: e.originalEvent.clientX - rect.left, y: e.originalEvent.clientY - rect.top });
+                        },
+                        mouseout: () => { setHovered(null); setMousePos(null); },
+                      }}
+                    >
+                      {/* Permanent ID label inside bubble */}
+                      <Tooltip
+                        permanent
+                        interactive={false}
+                        direction="center"
+                        className="leaflet-bubble-label"
+                        offset={[0, 0]}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontWeight: 700,
+                            fontSize: c.value >= 100 ? '11px' : '9px',
+                            color: 'white',
+                            textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+                            pointerEvents: 'none',
+                          }}
+                        >
+                          {c.id}
+                        </span>
+                      </Tooltip>
+                    </CircleMarker>
+                  ))}
+                </MapContainer>
+
+                {/* DOM tooltip — rendered outside Leaflet, positioned by mouse coords */}
+                {hovered && mousePos && (() => {
+                  const containerW = mapContainerRef.current?.clientWidth ?? 600;
+                  const containerH = mapContainerRef.current?.clientHeight ?? 380;
+                  const ttW = 230;
+                  const ttH = 120;
+                  const gap = 14;
+                  let left = mousePos.x + gap;
+                  let top = mousePos.y - ttH - gap;
+                  if (left + ttW > containerW - 4) left = mousePos.x - ttW - gap;
+                  if (top < 4) top = mousePos.y + gap;
+                  return (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left,
+                        top,
+                        zIndex: 1000,
+                        width: ttW,
+                        background: dark ? 'rgba(13,27,42,0.97)' : 'rgba(255,255,255,0.97)',
+                        border: `1.5px solid ${hovered.color}`,
+                        borderRadius: 8,
+                        padding: '10px 14px',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+                        pointerEvents: 'none',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <div style={{ color: hovered.color, fontWeight: 700, fontSize: 13, marginBottom: 2 }}>
+                        {hovered.name}
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontWeight: 600, fontSize: 11, marginBottom: 6, color: dark ? '#e2e8f0' : '#1a202c' }}>
+                        ${hovered.value}M · {hovered.pct}% of backlog
+                      </div>
+                      {hovered.programs.map((p, i) => (
+                        <div key={i} style={{ fontSize: 10, opacity: 0.7, lineHeight: 1.45, color: dark ? '#94a3b8' : '#4a5568' }}>
+                          · {p}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Attribution */}
+              <div style={{ fontSize: 9, opacity: 0.35, marginTop: 4, textAlign: 'right' }}>
+                © OpenStreetMap · © CARTO
               </div>
             </div>
           </div>
