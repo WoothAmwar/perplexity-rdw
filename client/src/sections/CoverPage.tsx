@@ -79,7 +79,9 @@ export default function CoverPage() {
 
         {/* Main headline */}
         <h1 className="font-bold mb-4" style={{ fontSize: 'clamp(32px, 5vw, 68px)', lineHeight: 1.08, fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}>
-          <span style={{ fontSize: '0.55em', fontWeight: 500, letterSpacing: '0.04em', opacity: 0.7, display: 'block', marginBottom: '0.15em' }}>Redwire</span>
+          <span style={{ fontSize: '0.55em', fontWeight: 500, letterSpacing: '0.04em', opacity: 0.7, display: 'block', marginBottom: '0.15em' }}>
+            Redwire <span style={{ color: 'var(--rdw-red)', fontWeight: 700, opacity: 1 }}>NYSE: RDW</span>
+          </span>
           The Space<br />
           <span className="text-gradient-red">Infrastructure Monopoly</span>
         </h1>
