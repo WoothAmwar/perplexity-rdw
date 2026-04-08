@@ -220,13 +220,14 @@ export default function PipelinePage() {
             left: tooltip.x + 12,
             top: tooltip.y - 8,
             zIndex: 9999,
-            background: 'rgba(13,17,23,0.95)',
+            background: 'var(--card-bg)',
             border: '1px solid #D4A017',
             borderRadius: 8,
             padding: '10px 14px',
             fontSize: 13,
             maxWidth: 260,
             color: 'var(--text-primary)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             pointerEvents: 'none',
           }}
         >

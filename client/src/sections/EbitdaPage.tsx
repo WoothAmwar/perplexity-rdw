@@ -1,6 +1,7 @@
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import GlossaryTooltip from '../components/GlossaryTooltip';
+import { useTheme } from '../App';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -52,7 +53,8 @@ const chartData = {
   ],
 };
 
-const chartOptions = {
+// chartOptions built inside component — see EbitdaPage()
+const buildChartOptions = (dark: boolean) => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -60,11 +62,11 @@ const chartOptions = {
       labels: { color: '#8892A4', font: { family: "'Space Grotesk'", size: 12 } },
     },
     tooltip: {
-      backgroundColor: '#0D1117',
+      backgroundColor: dark ? '#111827' : '#FFFFFF',
       borderColor: '#D4A017',
       borderWidth: 1,
       titleColor: '#D4A017',
-      bodyColor: '#C8D0DC',
+      bodyColor: dark ? '#9BA8BB' : '#1F2937',
       callbacks: {
         label: (item: any) => {
           if (item.datasetIndex === 0) return ` Margin: ${item.raw.toFixed(1)}%`;
@@ -107,7 +109,7 @@ const chartOptions = {
       grid: { display: false },
     },
   },
-};
+});
 
 const drivers = [
   { title: 'Revenue Ramp to $710M', impact: '+12–15pp margin', color: '#D4A017', detail: 'Fixed cost absorption — R&D, G&A, and facilities costs stay roughly flat while revenue more than doubles. This is classic operating leverage.' },
@@ -117,6 +119,8 @@ const drivers = [
 ];
 
 export default function EbitdaPage() {
+  const { dark } = useTheme();
+  const chartOptions = buildChartOptions(dark);
   return (
     <section id="ebitda" className="page-section">
       <div className="max-w-7xl mx-auto px-8">

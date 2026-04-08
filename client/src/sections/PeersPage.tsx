@@ -203,13 +203,14 @@ export default function PeersPage() {
             left: tooltip.x + 14,
             top: tooltip.y - 10,
             zIndex: 9999,
-            background: 'rgba(13,17,23,0.97)',
+            background: 'var(--card-bg)',
             border: `1px solid ${tooltip.peer.color}`,
             borderRadius: 8,
             padding: '12px 16px',
             fontSize: 12,
             maxWidth: 260,
-            color: '#E8EDF5',
+            color: 'var(--text-primary)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             pointerEvents: 'none',
           }}
         >

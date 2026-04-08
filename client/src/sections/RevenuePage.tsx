@@ -5,6 +5,7 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 } from 'chart.js';
 import GlossaryTooltip from '../components/GlossaryTooltip';
+import { useTheme } from '../App';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -51,6 +52,7 @@ const SANKEY_COL_HEADERS = [
 ];
 
 export default function RevenuePage() {
+  const { dark } = useTheme();
   const sankeyRef = useRef<SVGSVGElement>(null);
 
   const barData = {
@@ -83,11 +85,11 @@ export default function RevenuePage() {
         labels: { color: '#8892A4', font: { family: "'Space Grotesk', sans-serif", size: 12 } },
       },
       tooltip: {
-        backgroundColor: '#0D1117',
+        backgroundColor: dark ? '#111827' : '#FFFFFF',
         borderColor: '#D4A017',
         borderWidth: 1,
         titleColor: '#D4A017',
-        bodyColor: '#C8D0DC',
+        bodyColor: dark ? '#9BA8BB' : '#1F2937',
         callbacks: {
           title: (items: any[]) => `${items[0].label}${items[0].datasetIndex === 0 && !REVENUE_DATA[items[0].dataIndex].actual ? ' (Est)' : ''}`,
           afterBody: (items: any[]) => {

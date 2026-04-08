@@ -33,8 +33,8 @@ export default function GlossaryTooltip({ term, definition, children }: Glossary
           className="tooltip-rdw"
           style={{ left: pos.x, top: pos.y, position: 'fixed', zIndex: 9999 }}
         >
-          <div className="text-[11px] font-semibold text-[#D4A017] uppercase tracking-wider mb-1">{term}</div>
-          <div className="text-[13px] text-[#C8D0DC] leading-relaxed">{definition}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#D4A017' }}>{term}</div>
+          <div className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{definition}</div>
         </div>
       )}
     </>

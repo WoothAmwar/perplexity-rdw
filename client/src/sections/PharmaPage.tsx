@@ -246,15 +246,15 @@ export default function PharmaPage() {
               left: tooltip.x + 14,
               top: tooltip.y - 10,
               zIndex: 9999,
-              background: 'rgba(13,17,23,0.97)',
+              background: 'var(--card-bg)',
               border: `1px solid ${COLOR_BY_EXPIRY(tooltip.drug.expiry)}`,
               borderRadius: 8,
               padding: '12px 16px',
               fontSize: 12,
               maxWidth: 280,
-              color: '#E8EDF5',
+              color: 'var(--text-primary)',
               pointerEvents: 'none',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             }}
           >
             <div className="font-bold text-sm mb-1" style={{ color: COLOR_BY_EXPIRY(tooltip.drug.expiry) }}>
