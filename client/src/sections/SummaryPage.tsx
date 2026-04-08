@@ -13,23 +13,29 @@ const keyMetrics = [
   { label: 'Total Liquidity', value: '$130.2M', change: 'Record level', up: true },
 ];
 
+// Q4 2025 total = $54.5M + $54.3M = $108.8M
+const Q4_TOTAL = 108.8;
 const segments = [
   {
     name: 'Space Infrastructure',
-    pct: 49,
+    value: 54.5,
+    pct: parseFloat(((54.5 / 108.8) * 100).toFixed(1)), // 50.1%
     color: '#C8102E',
     q4rev: '$54.5M',
     backlog: '$299.8M',
     bToB: '2.04x',
+    bToBDef: 'Space Infrastructure is booking $2.04 of new contracts for every $1 of revenue shipped — backlog growing 2x faster than billing.',
     desc: 'iROSA/ELSA solar arrays, deployable structures, in-space manufacturing, Hammerhead RF antennas for EuroQCI and MATTEO (Belgium\'s first national security satellite)',
   },
   {
     name: 'Defense Technology',
-    pct: 50,
+    value: 54.3,
+    pct: parseFloat(((54.3 / 108.8) * 100).toFixed(1)), // 49.9%
     color: '#0EA5E9',
     q4rev: '$54.3M',
     backlog: '$111.4M',
     bToB: '0.99x',
+    bToBDef: 'Defense Technology is converting backlog to revenue near 1:1 — healthy utilization of the existing order book while new UAS contracts ramp.',
     desc: 'Edge Autonomy UAS systems (Stalker XE/FC — 433km range), SOFC power stacks, multi-domain ISR payloads. 85,000 sq ft Ann Arbor facility opened Nov 2025.',
   },
 ];
@@ -118,39 +124,63 @@ export default function SummaryPage() {
           ))}
         </div>
 
-        {/* Business segments — Q4 2025 first-ever segment reporting */}
+        {/* Business segments — unified combined figure */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
           <div>
             <div className="section-eyebrow mb-1">Q4 2025 — First Segment Reporting</div>
             <p className="text-[11px] mb-4 font-mono" style={{ color: 'var(--text-muted)' }}>
-              Bar = % of total Q4 2025 revenue · Hover “B/B” for Book-to-Bill definition
+              Q4 2025 total: <span className="font-bold" style={{ color: 'var(--text-secondary)' }}>$108.8M</span>
+              {' · Hover '}
+              <GlossaryTooltip
+                term="Book-to-Bill Ratio (B/B)"
+                definition="New orders received ÷ revenue billed in the same period. Above 1.0x means backlog grows faster than revenue — a leading indicator of future sales."
+              >B/B</GlossaryTooltip>
+              {' for definition'}
             </p>
-            <div className="space-y-4">
-              {segments.map((s) => (
-                <div key={s.name} className="glass-card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm" style={{ background: s.color }} />
-                      <span className="font-semibold text-[15px]" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
-                    </div>
-                    <span className="font-mono text-lg font-bold" style={{ color: s.color }}>{s.q4rev}</span>
-                  </div>
-                  <div className="h-2 rounded-full mb-3" style={{ background: 'var(--card-border)' }}>
-                    <div
-                      className="h-2 rounded-full transition-all duration-1000"
-                      style={{ width: `${s.pct}%`, background: `linear-gradient(90deg, ${s.color}, ${s.color}80)` }}
-                    />
-                  </div>
-                  <div className="flex gap-4 mb-3 text-[11px]">
-                    <span style={{ color: 'var(--text-muted)' }}>Backlog: <span className="font-mono font-bold" style={{ color: 'var(--text-secondary)' }}>{s.backlog}</span></span>
-                    <span style={{ color: 'var(--text-muted)' }}>
-                      <GlossaryTooltip
-                        term="Book-to-Bill Ratio (B/B)"
-                        definition="New orders received ÷ revenue billed in the same period. A ratio above 1.0x means the order backlog is growing faster than revenue — a leading indicator of future sales. B/B of 2.04x means Space Infrastructure is booking $2.04 of new contracts for every $1 of revenue shipped."
-                      >
-                        B/B
-                      </GlossaryTooltip>: <span className="font-mono font-bold" style={{ color: s.color }}>{s.bToB}</span>
+
+            {/* Single stacked bar — both segments side by side */}
+            <div className="glass-card p-5 mb-4">
+              <div className="flex justify-between text-[11px] font-mono mb-2">
+                <span style={{ color: '#C8102E' }}>Space Infrastructure</span>
+                <span style={{ color: '#0EA5E9' }}>Defense Technology</span>
+              </div>
+              <div className="relative h-9 rounded-lg overflow-hidden flex" style={{ background: 'var(--card-border)' }}>
+                {segments.map((s) => (
+                  <div
+                    key={s.name}
+                    className="h-full flex items-center justify-center"
+                    style={{ width: `${s.pct}%`, background: s.color, opacity: 0.88 }}
+                    title={`${s.name}: ${s.q4rev} (${s.pct}%)`}
+                  >
+                    <span className="text-[11px] font-bold font-mono text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
+                      {s.pct}%
                     </span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-[12px] font-mono font-bold mt-2">
+                <span style={{ color: '#C8102E' }}>{segments[0].q4rev}</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Q4 2025 — $108.8M total</span>
+                <span style={{ color: '#0EA5E9' }}>{segments[1].q4rev}</span>
+              </div>
+            </div>
+
+            {/* Per-segment detail rows */}
+            <div className="space-y-3">
+              {segments.map((s) => (
+                <div key={s.name} className="glass-card p-4" style={{ borderLeft: `3px solid ${s.color}` }}>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2">
+                    <span className="font-semibold text-[14px]" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
+                    <div className="flex items-center gap-3 text-[11px] font-mono flex-wrap">
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        Backlog: <span className="font-bold" style={{ color: 'var(--text-secondary)' }}>{s.backlog}</span>
+                      </span>
+                      <GlossaryTooltip term={`B/B — ${s.name}`} definition={s.bToBDef}>
+                        <span style={{ cursor: 'help' }}>
+                          B/B: <span className="font-bold" style={{ color: s.color }}>{s.bToB}</span>
+                        </span>
+                      </GlossaryTooltip>
+                    </div>
                   </div>
                   <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
                 </div>
