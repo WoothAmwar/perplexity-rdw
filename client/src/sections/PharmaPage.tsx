@@ -14,13 +14,14 @@ interface Drug {
 }
 
 const DRUGS: Drug[] = [
-  { id: 'keytruda', name: 'Keytruda', company: 'Merck', revenue: 25.0, expiry: 2028, indication: 'Cancer immunotherapy (PD-1 inhibitor)', rdwSolution: 'PIL-BOX growing purer pembrolizumab crystals — enables sub-Q formulation, cutting infusion center visits. Merck partnership active.', ivToSubQ: true },
-  { id: 'eliquis', name: 'Eliquis', company: 'BMS/Pfizer', revenue: 11.8, expiry: 2026, indication: 'Blood thinner — prevents stroke/clots', rdwSolution: 'Crystal optimization enables once-weekly oral dosing vs current twice-daily.', ivToSubQ: false },
+  // Corrected per memo (April 6 2026): Keytruda $29.5B, Stelara $10.8B, Trulicity added
+  { id: 'keytruda', name: 'Keytruda', company: 'Merck', revenue: 29.5, expiry: 2028, indication: 'Cancer immunotherapy (PD-1 inhibitor)', rdwSolution: 'PIL-BOX growing purer pembrolizumab crystals — enables sub-Q formulation, cutting infusion center visits. Merck partnership active.', ivToSubQ: true },
+  { id: 'eliquis', name: 'Eliquis', company: 'BMS/Pfizer', revenue: 11.8, expiry: 2028, indication: 'Blood thinner — prevents stroke/clots', rdwSolution: 'Crystal optimization enables once-weekly oral dosing vs current twice-daily.', ivToSubQ: false },
   { id: 'opdivo', name: 'Opdivo', company: 'BMS', revenue: 8.2, expiry: 2027, indication: 'Cancer immunotherapy (PD-1 inhibitor)', rdwSolution: 'Sub-Q formulation via microgravity crystallization — replaces 30-min IV infusion.', ivToSubQ: true },
-  { id: 'stelara', name: 'Stelara', company: 'J&J', revenue: 9.7, expiry: 2025, indication: 'Autoimmune (Crohn\'s, psoriasis)', rdwSolution: 'Already expired — biosimilar pressure demonstrates the value of new patentable forms.', ivToSubQ: false },
+  { id: 'stelara', name: 'Stelara', company: 'J&J', revenue: 10.8, expiry: 2025, indication: 'Autoimmune (Crohn\'s, psoriasis)', rdwSolution: 'LOE underway — biosimilar pressure drives urgent demand for new patentable crystal forms.', ivToSubQ: false },
+  { id: 'trulicity', name: 'Trulicity', company: 'Eli Lilly', revenue: 7.1, expiry: 2027, indication: 'GLP-1 diabetes/obesity treatment', rdwSolution: 'Microgravity crystal improvement for subcutaneous GLP-1 biologics — pre-cliff positioning.', ivToSubQ: true },
   { id: 'eylea', name: 'Eylea', company: 'Regeneron', revenue: 6.3, expiry: 2027, indication: 'Macular degeneration eye injection', rdwSolution: 'Higher purity crystals extend dosing interval from monthly to quarterly.', ivToSubQ: false },
   { id: 'skyrizi', name: 'Skyrizi', company: 'AbbVie', revenue: 7.0, expiry: 2030, indication: 'Psoriasis (IL-23 inhibitor)', rdwSolution: 'Pre-patent cliff positioning — sub-Q self-injection vs IV infusion center.', ivToSubQ: true },
-  { id: 'jardiance', name: 'Jardiance', company: 'Boehringer', revenue: 5.1, expiry: 2027, indication: 'Type 2 diabetes / heart failure', rdwSolution: 'Crystal size optimization improves bioavailability — enables lower effective dose.', ivToSubQ: false },
   { id: 'dupixent', name: 'Dupixent', company: 'Sanofi/Regeneron', revenue: 9.7, expiry: 2031, indication: 'Atopic dermatitis / asthma', rdwSolution: 'Growth frontier — pre-cliff positioning for biologic reformulation.', ivToSubQ: true },
 ];
 

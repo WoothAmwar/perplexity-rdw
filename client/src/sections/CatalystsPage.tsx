@@ -67,7 +67,7 @@ const CATALYSTS = [
   {
     period: 'FY2027',
     timing: 'Medium-term',
-    event: 'EBITDA Break-Even',
+    event: 'EBITDA Inflection (H2 2026 — Management Guidance)',
     type: 'financial',
     impact: 'Re-rating',
     desc: 'Crossing positive Adjusted EBITDA expands the institutional buyer universe from ~40 to 150+ funds. This is the single most powerful catalyst for multiple expansion and the core thesis.',
@@ -147,7 +147,7 @@ export default function CatalystsPage() {
             <span className="text-gradient-gold">Each One a Re-Rating Event.</span>
           </h2>
           <p className="section-subtitle max-w-3xl">
-            Unlike most undervalued situations that depend on market sentiment shifting, RDW has eight discrete, independently verifiable catalysts over the next 18 months — any one of which could close a meaningful portion of the 114% gap to our $16 price target.
+            Unlike most undervalued situations that depend on market sentiment shifting, RDW has eight discrete, independently verifiable catalysts over the next 18 months — any one of which could close a meaningful portion of the 67% gap to our $16 price target.
           </p>
         </div>
 
@@ -248,7 +248,7 @@ export default function CatalystsPage() {
                 SOTP: $18.01
               </span>
             </div>
-            <div className="text-5xl font-black font-mono text-gradient-gold mb-2">+114% Upside</div>
+            <div className="text-5xl font-black font-mono text-gradient-gold mb-2">+67% Upside</div>
             <p className="text-[14px] text-[#8892A4] max-w-2xl mx-auto leading-relaxed mt-4">
               Redwire Corporation is a rare convergence play: a{' '}
               <GlossaryTooltip term="Space Infrastructure Monopoly" definition="Redwire is one of only two global manufacturers of roll-out solar arrays proven for crewed space stations, while also being the sole operational provider of pharmaceutical crystallization services from the ISS.">

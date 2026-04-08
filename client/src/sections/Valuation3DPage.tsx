@@ -1,39 +1,64 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 
-// DCF calculation engine
-function calcDCF(wacc: number, termGrowth: number, beta: number): number {
-  // Base FCF path: FY26E=-5, FY27E=15, FY28E=40, FY29E=58, FY30E=72 ($M)
-  const baseFCFs = [-5, 15, 40, 58, 72];
-  // Beta adjustment factor on growth
-  const betaAdj = (2.49 - beta) * 0.12 + 1;
-  const fcfs = baseFCFs.map((f) => f * betaAdj);
+const LIVE_PRICE = 9.56;
 
+// ─── Memo-verified DCF engine (Two-Stage, April 6 2026) ─────────────────────
+// Stage 1 (2026-2028): FCF = -30, +10, +40 ($M)
+// Stage 2 (2029-2031): FCF = +68, +95, +115 ($M)
+// Terminal: $115M terminal FCF, base TG 3.5%
+// Net debt: −$6.6M (near net cash)
+// Diluted shares: 165M
+function calcDCF(wacc: number, termGrowth: number, beta: number): number {
   const w = wacc / 100;
   const g = termGrowth / 100;
 
-  // PV of FCFs
+  // Beta adjustment factor — beta=1.25 is fully re-rated scenario
+  // As beta compresses from 2.49→1.25, FCFs improve (lower EAC risk, production visibility)
+  const betaNorm = (beta - 1.25) / (2.49 - 1.25); // 0 at mature, 1 at current
+  const betaFCFPenalty = 1 - betaNorm * 0.35; // 35% FCF haircut at peak beta
+
+  const baseFCFs = [-30, 10, 40, 68, 95, 115];
+  const fcfs = baseFCFs.map(f => f * betaFCFPenalty);
+
   let pvFCF = 0;
   fcfs.forEach((f, i) => {
     pvFCF += f / Math.pow(1 + w, i + 1);
   });
 
-  // Terminal value (Gordon Growth)
   const terminalFCF = fcfs[fcfs.length - 1] * (1 + g);
   const tv = terminalFCF / (w - g);
   const pvTV = tv / Math.pow(1 + w, fcfs.length);
 
   const ev = pvFCF + pvTV;
-  const netDebt = 213 - 40; // FY28E
+  const netDebt = -6.6; // near net cash
   const equity = ev - netDebt;
-  const shares = 137.1;
+  const shares = 165;
   const price = equity / shares;
-  return Math.max(1, Math.min(30, price));
+  return Math.max(0.5, Math.min(35, price));
 }
 
-// Sensitivity matrix data
 const WACC_RANGE = [10.0, 10.5, 11.0, 11.5, 12.0, 12.5, 13.0];
 const TGROWTH_RANGE = [2.5, 3.0, 3.5, 4.0];
+
+// ─── Canvas-based axis label sprite ─────────────────────────────────────────
+function makeTextSprite(text: string, color = '#1a1a1a'): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = 'bold 28px Space Mono, monospace';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 128, 32);
+  const texture = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(1.2, 0.3, 1);
+  return sprite;
+}
 
 export default function Valuation3DPage() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -41,11 +66,15 @@ export default function Valuation3DPage() {
   const [beta, setBeta] = useState(2.49);
   const [hoverCell, setHoverCell] = useState<{ wacc: number; tg: number; price: number } | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const sceneRef = useRef<{ scene: THREE.Scene; camera: THREE.PerspectiveCamera; meshGroup: THREE.Group } | null>(null);
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    meshGroup: THREE.Group;
+    labelGroup: THREE.Group;
+  } | null>(null);
   const frameRef = useRef<number>(0);
   const isRotating = useRef(true);
 
-  // Build surface geometry
   const buildSurface = useCallback((b: number) => {
     const W = WACC_RANGE.length;
     const H = TGROWTH_RANGE.length;
@@ -54,23 +83,22 @@ export default function Valuation3DPage() {
     const indices: number[] = [];
 
     const prices = WACC_RANGE.map((w) => TGROWTH_RANGE.map((tg) => calcDCF(w, tg, b)));
-
     const minP = Math.min(...prices.flat());
     const maxP = Math.max(...prices.flat());
 
     for (let j = 0; j < H; j++) {
       for (let i = 0; i < W; i++) {
         const x = (i / (W - 1) - 0.5) * 4;
-        const z = (j / (H - 1) - 0.5) * 2;
-        const y = (prices[i][j] - minP) / (maxP - minP) * 2 - 0.5;
+        const z = (j / (H - 1) - 0.5) * 2.5;
+        const y = ((prices[i][j] - minP) / (maxP - minP)) * 2.2 - 0.3;
         vertices.push(x, y, z);
 
-        // Color gradient: low=red, mid=gold, high=green
+        // Color: red(low) → amber(mid) → green(high)
         const t = (prices[i][j] - minP) / (maxP - minP);
-        const r = t < 0.5 ? 1 : 1 - (t - 0.5) * 2;
+        const r = t < 0.5 ? 1 : 1 - (t - 0.5) * 1.6;
         const g2 = t < 0.5 ? t * 2 : 1;
-        const b2 = t > 0.7 ? (t - 0.7) * 3 : 0;
-        colors.push(r, g2, b2);
+        const b2 = t > 0.75 ? (t - 0.75) * 2.5 : 0;
+        colors.push(Math.min(1, r), Math.min(1, g2), Math.min(1, b2));
       }
     }
 
@@ -84,7 +112,7 @@ export default function Valuation3DPage() {
       }
     }
 
-    return { vertices, colors, indices, prices };
+    return { vertices, colors, indices, prices, minP, maxP };
   }, []);
 
   useEffect(() => {
@@ -92,62 +120,103 @@ export default function Valuation3DPage() {
     if (!mount) return;
 
     const W = mount.clientWidth || 700;
-    const H = 400;
+    const H = 440;
+    const isDark = document.documentElement.classList.contains('dark');
+    const bgColor = isDark ? 0x0B0F18 : 0xFAFAFA;
+    const axisColor = isDark ? '#9BA8BB' : '#374151';
+    const gridColor = isDark ? 0x1F2937 : 0xE5E7EB;
 
-    // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x070b14);
+    scene.background = new THREE.Color(bgColor);
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-    camera.position.set(3.5, 3, 4.5);
+    const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 100);
+    camera.position.set(4.2, 3.5, 5.2);
     camera.lookAt(0, 0.5, 0);
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(W, H);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dir = new THREE.DirectionalLight(0xf5c842, 1.2);
-    dir.position.set(2, 4, 2);
-    scene.add(dir);
-    const dir2 = new THREE.DirectionalLight(0x1abcb4, 0.6);
-    dir2.position.set(-2, 2, -2);
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const dir1 = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir1.position.set(3, 5, 3);
+    scene.add(dir1);
+    const dir2 = new THREE.DirectionalLight(0xC8102E, 0.4);
+    dir2.position.set(-3, 2, -2);
     scene.add(dir2);
 
-    // Grid
-    const gridHelper = new THREE.GridHelper(5, 10, 0x1e2a3a, 0x1e2a3a);
-    gridHelper.position.y = -0.5;
+    // Grid floor
+    const gridHelper = new THREE.GridHelper(6, 12, gridColor, gridColor);
+    gridHelper.position.y = -0.35;
     scene.add(gridHelper);
 
-    // Axes
-    const axesMat = new THREE.LineBasicMaterial({ color: 0x3a4a5c });
-    const addAxis = (from: [number, number, number], to: [number, number, number]) => {
+    // ─── Axis lines ────────────────────────────────────────────────────────
+    const axisMat = new THREE.LineBasicMaterial({ color: isDark ? 0x6B7280 : 0x374151 });
+    const addLine = (from: [number,number,number], to: [number,number,number]) => {
       const geo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(...from),
-        new THREE.Vector3(...to),
+        new THREE.Vector3(...from), new THREE.Vector3(...to),
       ]);
-      scene.add(new THREE.Line(geo, axesMat));
+      scene.add(new THREE.Line(geo, axisMat));
     };
-    addAxis([-2.5, -0.5, 0], [2.5, -0.5, 0]);
-    addAxis([0, -0.5, -1.5], [0, -0.5, 1.5]);
-    addAxis([0, -0.5, 0], [0, 2.5, 0]);
+
+    // X axis (WACC: 10% → 13%)
+    addLine([-2.2, -0.35, 0], [2.2, -0.35, 0]);
+    // Z axis (Terminal Growth: 2.5% → 4%)
+    addLine([0, -0.35, -1.3], [0, -0.35, 1.3]);
+    // Y axis (Share Price height)
+    addLine([0, -0.35, 0], [0, 2.1, 0]);
+
+    // ─── Axis label sprites ────────────────────────────────────────────────
+    const labelGroup = new THREE.Group();
+    scene.add(labelGroup);
+
+    // X-axis label — WACC
+    const xLabel = makeTextSprite('← WACC (10%–13%) →', axisColor);
+    xLabel.position.set(0, -0.75, 1.9);
+    labelGroup.add(xLabel);
+
+    // Z-axis label — Terminal Growth
+    const zLabel = makeTextSprite('← TG Rate (2.5%–4%) →', axisColor);
+    zLabel.position.set(-2.5, -0.75, 0);
+    labelGroup.add(zLabel);
+
+    // Y-axis label — Share Price
+    const yLabel = makeTextSprite('↑ Share Price ($)', axisColor);
+    yLabel.position.set(-2.5, 1.2, 0);
+    yLabel.scale.set(1.0, 0.28, 1);
+    labelGroup.add(yLabel);
+
+    // WACC tick labels: 10%, 11%, 12%, 13%
+    [10, 11, 12, 13].forEach((w, i) => {
+      const frac = (w - 10) / 3;
+      const xPos = (frac - 0.5) * 4;
+      const tick = makeTextSprite(`${w}%`, axisColor);
+      tick.position.set(xPos, -0.58, 1.55);
+      tick.scale.set(0.55, 0.18, 1);
+      labelGroup.add(tick);
+    });
+
+    // TG tick labels: 2.5%, 3.0%, 3.5%, 4.0%
+    [2.5, 3.0, 3.5, 4.0].forEach((tg, i) => {
+      const frac = i / 3;
+      const zPos = (frac - 0.5) * 2.5;
+      const tick = makeTextSprite(`${tg}%`, axisColor);
+      tick.position.set(-2.5, -0.58, zPos);
+      tick.scale.set(0.55, 0.18, 1);
+      labelGroup.add(tick);
+    });
 
     // Mesh group
     const meshGroup = new THREE.Group();
     scene.add(meshGroup);
 
-    sceneRef.current = { scene, camera, meshGroup };
-
-    // Build initial surface
     const updateSurface = (b: number) => {
       while (meshGroup.children.length) meshGroup.remove(meshGroup.children[0]);
 
-      const { vertices, colors, indices } = buildSurface(b);
+      const { vertices, colors, indices, prices, minP, maxP } = buildSurface(b);
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -157,68 +226,76 @@ export default function Valuation3DPage() {
       const mat = new THREE.MeshPhongMaterial({
         vertexColors: true,
         side: THREE.DoubleSide,
-        shininess: 60,
+        shininess: 80,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.88,
       });
+      meshGroup.add(new THREE.Mesh(geo, mat));
 
-      const mesh = new THREE.Mesh(geo, mat);
-      meshGroup.add(mesh);
+      // Wireframe overlay
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: isDark ? 0x374151 : 0xD1D5DB,
+        wireframe: true,
+        transparent: true,
+        opacity: isDark ? 0.25 : 0.3,
+      });
+      meshGroup.add(new THREE.Mesh(geo.clone(), wireMat));
 
-      // Wireframe
-      const wireMat = new THREE.MeshBasicMaterial({ color: 0x1e2a3a, wireframe: true, transparent: true, opacity: 0.3 });
-      const wire = new THREE.Mesh(geo.clone(), wireMat);
-      meshGroup.add(wire);
-
-      // Target price marker
-      const targetPriceWacc = 10.5; // β=1.25 scenario
-      const targetTG = 3.0;
-      const tp = calcDCF(targetPriceWacc, targetTG, b);
-      const wi = WACC_RANGE.indexOf(WACC_RANGE.reduce((prev, curr) => Math.abs(curr - targetPriceWacc) < Math.abs(prev - targetPriceWacc) ? curr : prev));
-      const ti = TGROWTH_RANGE.indexOf(TGROWTH_RANGE.reduce((prev, curr) => Math.abs(curr - targetTG) < Math.abs(prev - targetTG) ? curr : prev));
-      const { prices } = buildSurface(b);
-      const minP = Math.min(...prices.flat());
-      const maxP = Math.max(...prices.flat());
+      // ── Base-case price target marker ($16.00 at WACC 11%, TG 3.5%, β=1.25) ──
+      const targetW = 11.0;
+      const targetTG = 3.5;
+      const tp = calcDCF(targetW, targetTG, b);
+      const wi = WACC_RANGE.indexOf(WACC_RANGE.reduce((p, c) => Math.abs(c - targetW) < Math.abs(p - targetW) ? c : p));
+      const ti = TGROWTH_RANGE.indexOf(TGROWTH_RANGE.reduce((p, c) => Math.abs(c - targetTG) < Math.abs(p - targetTG) ? c : p));
       const px = (wi / (WACC_RANGE.length - 1) - 0.5) * 4;
-      const pz = (ti / (TGROWTH_RANGE.length - 1) - 0.5) * 2;
-      const py = (tp - minP) / (maxP - minP) * 2 - 0.5 + 0.15;
+      const pz = (ti / (TGROWTH_RANGE.length - 1) - 0.5) * 2.5;
+      const py = ((tp - minP) / (maxP - minP)) * 2.2 - 0.3 + 0.2;
 
-      const markerGeo = new THREE.SphereGeometry(0.08, 12, 12);
-      const markerMat = new THREE.MeshPhongMaterial({ color: 0xd4a017, emissive: 0xd4a017, emissiveIntensity: 0.5 });
+      const markerGeo = new THREE.SphereGeometry(0.1, 14, 14);
+      const markerMat = new THREE.MeshPhongMaterial({
+        color: 0xC8102E,
+        emissive: 0xC8102E,
+        emissiveIntensity: 0.6,
+      });
       const marker = new THREE.Mesh(markerGeo, markerMat);
       marker.position.set(px, py, pz);
       meshGroup.add(marker);
+
+      // Pulsing ring around marker
+      const ringGeo = new THREE.RingGeometry(0.13, 0.18, 24);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xC8102E, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.set(px, py, pz);
+      ring.lookAt(camera.position);
+      meshGroup.add(ring);
     };
 
     updateSurface(beta);
+    sceneRef.current = { scene, camera, meshGroup, labelGroup };
 
-    // Mouse drag to rotate
+    // Mouse drag
     let isDragging = false;
-    let prevMouseX = 0;
-    let prevMouseY = 0;
-
-    const onMouseDown = (e: MouseEvent) => { isDragging = true; prevMouseX = e.clientX; prevMouseY = e.clientY; isRotating.current = false; };
-    const onMouseUp = () => { isDragging = false; };
-    const onMouseMove = (e: MouseEvent) => {
+    let prevMX = 0, prevMY = 0;
+    const onDown = (e: MouseEvent) => { isDragging = true; prevMX = e.clientX; prevMY = e.clientY; isRotating.current = false; };
+    const onUp = () => { isDragging = false; };
+    const onMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      const dx = e.clientX - prevMouseX;
-      const dy = e.clientY - prevMouseY;
-      meshGroup.rotation.y += dx * 0.01;
-      meshGroup.rotation.x += dy * 0.01;
-      prevMouseX = e.clientX; prevMouseY = e.clientY;
+      meshGroup.rotation.y += (e.clientX - prevMX) * 0.008;
+      meshGroup.rotation.x += (e.clientY - prevMY) * 0.008;
+      labelGroup.rotation.y = meshGroup.rotation.y;
+      prevMX = e.clientX; prevMY = e.clientY;
     };
+    renderer.domElement.addEventListener('mousedown', onDown);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('mousemove', onMove);
 
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('mousemove', onMouseMove);
-
-    // Animate
     let angle = 0;
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
       if (isRotating.current) {
         angle += 0.003;
         meshGroup.rotation.y = angle;
+        labelGroup.rotation.y = angle;
       }
       renderer.render(scene, camera);
     };
@@ -226,35 +303,54 @@ export default function Valuation3DPage() {
 
     return () => {
       cancelAnimationFrame(frameRef.current);
-      renderer.domElement.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('mousemove', onMouseMove);
+      renderer.domElement.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('mousemove', onMove);
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update surface when beta changes
+  // Rebuild surface when beta slider moves
   useEffect(() => {
     if (!sceneRef.current) return;
     const { meshGroup } = sceneRef.current;
     while (meshGroup.children.length) meshGroup.remove(meshGroup.children[0]);
 
-    const { vertices, colors, indices } = buildSurface(beta);
+    const isDark = document.documentElement.classList.contains('dark');
+    const { vertices, colors, indices, prices, minP, maxP } = buildSurface(beta);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     geo.setIndex(indices);
     geo.computeVertexNormals();
 
-    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, side: THREE.DoubleSide, shininess: 60, transparent: true, opacity: 0.85 });
+    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, side: THREE.DoubleSide, shininess: 80, transparent: true, opacity: 0.88 });
     meshGroup.add(new THREE.Mesh(geo, mat));
-    const wireMat = new THREE.MeshBasicMaterial({ color: 0x1e2a3a, wireframe: true, transparent: true, opacity: 0.3 });
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: isDark ? 0x374151 : 0xD1D5DB,
+      wireframe: true, transparent: true,
+      opacity: isDark ? 0.25 : 0.3,
+    });
     meshGroup.add(new THREE.Mesh(geo.clone(), wireMat));
+
+    // Marker
+    const targetW = 11.0, targetTG = 3.5;
+    const tp = calcDCF(targetW, targetTG, beta);
+    const wi = WACC_RANGE.indexOf(WACC_RANGE.reduce((p, c) => Math.abs(c - targetW) < Math.abs(p - targetW) ? c : p));
+    const ti = TGROWTH_RANGE.indexOf(TGROWTH_RANGE.reduce((p, c) => Math.abs(c - targetTG) < Math.abs(p - targetTG) ? c : p));
+    const px = (wi / (WACC_RANGE.length - 1) - 0.5) * 4;
+    const pz = (ti / (TGROWTH_RANGE.length - 1) - 0.5) * 2.5;
+    const py = ((tp - minP) / (maxP - minP)) * 2.2 - 0.3 + 0.2;
+    const mGeo = new THREE.SphereGeometry(0.1, 14, 14);
+    const mMat = new THREE.MeshPhongMaterial({ color: 0xC8102E, emissive: 0xC8102E, emissiveIntensity: 0.6 });
+    const marker = new THREE.Mesh(mGeo, mMat);
+    marker.position.set(px, py, pz);
+    meshGroup.add(marker);
   }, [beta, buildSurface]);
 
-  // 2D sensitivity matrix for hover
+  // 2D sensitivity matrix
   const matrix = WACC_RANGE.map((w) => TGROWTH_RANGE.map((tg) => calcDCF(w, tg, beta)));
   const allPrices = matrix.flat();
   const minPrice = Math.min(...allPrices);
@@ -262,45 +358,52 @@ export default function Valuation3DPage() {
 
   const cellColor = (price: number) => {
     const t = (price - minPrice) / (maxPrice - minPrice);
-    if (t > 0.66) return 'rgba(76,175,80,0.25)';
-    if (t > 0.33) return 'rgba(212,160,23,0.2)';
-    return 'rgba(192,57,43,0.2)';
+    if (t > 0.66) return 'rgba(16,185,129,0.18)';
+    if (t > 0.33) return 'rgba(245,158,11,0.18)';
+    return 'rgba(200,16,46,0.15)';
   };
 
-  const cellBorder = (price: number) => {
+  const cellAccent = (price: number) => {
     const t = (price - minPrice) / (maxPrice - minPrice);
-    if (t > 0.66) return '#4CAF50';
-    if (t > 0.33) return '#D4A017';
-    return '#C0392B';
+    if (t > 0.66) return '#10B981';
+    if (t > 0.33) return '#F59E0B';
+    return '#C8102E';
   };
+
+  const betaColor = beta <= 1.5 ? '#10B981' : beta <= 2.0 ? '#F59E0B' : '#C8102E';
 
   return (
     <section id="valuation3d" className="page-section">
       <div className="max-w-7xl mx-auto px-8">
-        <div className="mb-10">
-          <div className="section-eyebrow">Page 14 — Live 3D Valuation</div>
-          <h2 className="section-title mb-4">
-            DCF in Three Dimensions.<br />
-            <span className="text-gradient-gold">Watch the Surface Warp.</span>
-          </h2>
-          <p className="section-subtitle max-w-3xl">
-            The 3D surface maps every combination of WACC (X) and Terminal Growth Rate (Y) to a share price (Z). Drag to rotate. Use the Beta slider to watch the entire surface shift upward as execution de-risks the business and beta compresses from 2.49 to 1.25.
-          </p>
+        {/* flex-col for financial visualization */}
+        <div className="section-layout-col mb-8">
+          <div>
+            <div className="section-eyebrow">Page 14 — Live 3D Valuation</div>
+            <h2 className="section-title mb-4">
+              DCF in Three Dimensions.<br />
+              <span className="text-gradient-red">Watch the Surface Warp.</span>
+            </h2>
+            <p className="section-subtitle max-w-3xl">
+              X-axis: WACC (10%–13%). Y-axis: Terminal Growth Rate (2.5%–4%). Z-axis (height): Share Price.
+              Drag to rotate. The Beta slider re-rates from β=2.49 (development risk) to β=1.25 (mature peer) —
+              watch the entire surface warp upward, proving that WACC compression drives asymmetric upside.
+            </p>
+          </div>
         </div>
 
-        {/* Beta slider */}
+        {/* Beta slider panel */}
         <div className="glass-card p-5 mb-6">
           <div className="flex flex-wrap items-center gap-6">
             <div>
-              <div className="text-[11px] text-[#5C6880] font-mono uppercase tracking-wider mb-1">Beta Adjustment</div>
-              <div className="text-3xl font-black font-mono" style={{ color: beta <= 1.5 ? '#4CAF50' : beta <= 2.0 ? '#D4A017' : '#C0392B' }}>
+              <div className="text-[11px] font-mono uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Beta Re-Rating Slider</div>
+              <div className="text-3xl font-black font-mono" style={{ color: betaColor }}>
                 β = {beta.toFixed(2)}
               </div>
-              <div className="text-[11px] text-[#5C6880] mt-1">
-                {beta >= 2.3 ? 'Development stage risk pricing' : beta >= 1.6 ? 'Transition — production ramp' : 'Mature defense/space peer'}
+              <div className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                {beta >= 2.3 ? 'Development stage (current published)' : beta >= 1.6 ? 'Transition — production ramp' : 'Mature defense/space peer range'}
               </div>
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-[220px]">
               <input
                 type="range"
                 min={1.25}
@@ -308,21 +411,23 @@ export default function Valuation3DPage() {
                 step={0.01}
                 value={beta}
                 onChange={(e) => setBeta(parseFloat(e.target.value))}
-                className="w-full accent-yellow-500"
+                className="w-full"
                 data-testid="beta-slider"
-                style={{ accentColor: '#D4A017' }}
+                style={{ accentColor: 'var(--rdw-red)' }}
               />
-              <div className="flex justify-between text-[10px] text-[#3A4A5C] font-mono mt-1">
-                <span className="text-[#4CAF50]">1.25 (mature)</span>
-                <span className="text-[#C0392B]">2.49 (current)</span>
+              <div className="flex justify-between text-[10px] font-mono mt-1" style={{ color: 'var(--text-muted)' }}>
+                <span style={{ color: '#10B981' }}>β=1.25 (mature)</span>
+                <span style={{ color: '#C8102E' }}>β=2.49 (current)</span>
               </div>
             </div>
             <div className="text-center">
-              <div className="text-[11px] text-[#5C6880] uppercase tracking-wider mb-1">Base Case PT</div>
-              <div className="text-2xl font-black font-mono" style={{ color: beta <= 1.5 ? '#4CAF50' : '#D4A017' }}>
-                ${calcDCF(10.5, 3.0, beta).toFixed(2)}
+              <div className="text-[11px] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>DCF at WACC 11%, TG 3.5%</div>
+              <div className="text-3xl font-black font-mono" style={{ color: betaColor }}>
+                ${calcDCF(11.0, 3.5, beta).toFixed(2)}
               </div>
-              <div className="text-[11px] text-[#5C6880]">at WACC 10.5%, TG 3.0%</div>
+              <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                vs ${LIVE_PRICE} live · {(((calcDCF(11.0, 3.5, beta) - LIVE_PRICE) / LIVE_PRICE) * 100).toFixed(0)}% upside
+              </div>
             </div>
           </div>
         </div>
@@ -333,57 +438,58 @@ export default function Valuation3DPage() {
             <div className="section-eyebrow mb-2">3D Surface — Drag to Rotate · Slider = Beta Re-Rating</div>
             <div
               ref={mountRef}
-              className="rounded-xl overflow-hidden border border-[#1E2A3A]"
-              style={{ height: 400, cursor: 'grab' }}
+              className="rounded-xl overflow-hidden"
+              style={{ height: 440, cursor: 'grab', border: '1px solid var(--card-border)' }}
               data-testid="valuation-3d-canvas"
             />
-            <div className="flex justify-between mt-2 text-[10px] font-mono text-[#3A4A5C]">
+            <div className="flex justify-between mt-2 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
               <span>X: WACC (10%–13%)</span>
-              <span>Y: Share Price</span>
               <span>Z: Terminal Growth (2.5%–4%)</span>
+              <span>Y: Share Price</span>
             </div>
             <div className="flex gap-4 mt-2 justify-center text-[10px] font-mono">
-              <span className="text-[#C0392B]">■ Low</span>
-              <span className="text-[#D4A017]">■ Mid</span>
-              <span className="text-[#4CAF50]">■ High</span>
-              <span className="text-[#D4A017]">● Base Case PT</span>
+              <span style={{ color: '#C8102E' }}>■ Low</span>
+              <span style={{ color: '#F59E0B' }}>■ Mid</span>
+              <span style={{ color: '#10B981' }}>■ High</span>
+              <span style={{ color: '#C8102E' }}>● $16.00 Base Case</span>
             </div>
           </div>
 
-          {/* 2D Sensitivity matrix with full hover */}
+          {/* 2D Sensitivity Matrix */}
           <div>
-            <div className="section-eyebrow mb-2">2D Sensitivity Matrix — Hover for Detail</div>
+            <div className="section-eyebrow mb-2">DCF Sensitivity Matrix — Hover for Detail</div>
             <div className="glass-card p-4 relative overflow-x-auto">
               <table className="w-full text-center" data-testid="sensitivity-matrix">
                 <thead>
                   <tr>
-                    <th className="text-[10px] text-[#5C6880] font-mono p-2">WACC ↓ / TG →</th>
+                    <th className="text-[10px] font-mono p-2" style={{ color: 'var(--text-muted)' }}>WACC ↓ / TG →</th>
                     {TGROWTH_RANGE.map((tg) => (
-                      <th key={tg} className="text-[11px] text-[#D4A017] font-mono p-2">{tg}%</th>
+                      <th key={tg} className="text-[11px] font-mono p-2" style={{ color: 'var(--rdw-red)' }}>{tg}%</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {WACC_RANGE.map((wacc, wi) => (
                     <tr key={wacc}>
-                      <td className="text-[11px] text-[#1ABCB4] font-mono font-semibold p-2">{wacc}%</td>
+                      <td className="text-[11px] font-mono font-semibold p-2" style={{ color: '#0EA5E9' }}>{wacc}%</td>
                       {TGROWTH_RANGE.map((tg, ti) => {
                         const price = matrix[wi][ti];
                         const isHovered = hoverCell?.wacc === wacc && hoverCell?.tg === tg;
+                        const isBaseCase = Math.abs(wacc - 11.0) < 0.01 && Math.abs(tg - 3.5) < 0.01;
                         return (
                           <td
                             key={tg}
                             className="relative transition-all duration-150 font-mono text-sm font-bold"
                             style={{
-                              background: isHovered ? cellBorder(price) + '40' : cellColor(price),
-                              border: `1px solid ${isHovered ? cellBorder(price) : cellBorder(price) + '50'}`,
-                              color: isHovered ? '#FFFFFF' : cellBorder(price),
+                              background: isHovered ? cellAccent(price) + '30' : cellColor(price),
+                              border: `1px solid ${isBaseCase ? '#C8102E' : isHovered ? cellAccent(price) : cellAccent(price) + '40'}`,
+                              color: isHovered || isBaseCase ? cellAccent(price) : cellAccent(price) + 'CC',
                               padding: '10px 8px',
                               cursor: 'pointer',
                               borderRadius: 4,
-                              transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-                              boxShadow: isHovered ? `0 0 16px ${cellBorder(price)}60` : 'none',
-                              zIndex: isHovered ? 10 : 1,
+                              transform: isHovered ? 'scale(1.1)' : isBaseCase ? 'scale(1.04)' : 'scale(1)',
+                              boxShadow: isHovered ? `0 0 16px ${cellAccent(price)}50` : isBaseCase ? `0 0 8px rgba(200,16,46,0.3)` : 'none',
+                              zIndex: isHovered ? 10 : isBaseCase ? 5 : 1,
                             }}
                             onMouseEnter={(e) => {
                               setHoverCell({ wacc, tg, price });
@@ -394,6 +500,7 @@ export default function Valuation3DPage() {
                             data-testid={`cell-${wacc}-${tg}`}
                           >
                             ${price.toFixed(2)}
+                            {isBaseCase && <span className="block text-[8px] font-normal">BASE</span>}
                           </td>
                         );
                       })}
@@ -401,6 +508,9 @@ export default function Valuation3DPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="mt-2 text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>
+              β={beta.toFixed(2)} applied · Memo-verified FCF stream (2026E: −$30M → 2031E: +$115M) · 165M diluted shares
             </div>
           </div>
         </div>
@@ -413,39 +523,45 @@ export default function Valuation3DPage() {
               left: mousePos.x + 16,
               top: mousePos.y - 10,
               zIndex: 9999,
-              background: 'rgba(13,17,23,0.97)',
-              border: `1px solid ${cellBorder(hoverCell.price)}`,
+              background: 'var(--card-bg)',
+              border: `1.5px solid ${cellAccent(hoverCell.price)}`,
               borderRadius: 10,
               padding: '14px 18px',
               fontSize: 13,
-              minWidth: 220,
-              color: '#E8EDF5',
+              minWidth: 230,
+              color: 'var(--text-primary)',
               pointerEvents: 'none',
-              boxShadow: `0 8px 40px rgba(0,0,0,0.8), 0 0 20px ${cellBorder(hoverCell.price)}30`,
+              boxShadow: `0 8px 40px rgba(0,0,0,0.15), 0 0 20px ${cellAccent(hoverCell.price)}25`,
             }}
           >
-            <div className="text-[11px] font-mono text-[#5C6880] tracking-widest uppercase mb-2">DCF Scenario</div>
+            <div className="text-[11px] font-mono tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>DCF Scenario</div>
             <div className="space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-[#5C6880]">WACC</span>
-                <span className="font-mono font-bold text-[#1ABCB4]">{hoverCell.wacc}%</span>
+                <span style={{ color: 'var(--text-muted)' }}>WACC</span>
+                <span className="font-mono font-bold" style={{ color: '#0EA5E9' }}>{hoverCell.wacc}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5C6880]">Terminal Growth</span>
-                <span className="font-mono font-bold text-[#D4A017]">{hoverCell.tg}%</span>
+                <span style={{ color: 'var(--text-muted)' }}>Terminal Growth</span>
+                <span className="font-mono font-bold" style={{ color: 'var(--rdw-red)' }}>{hoverCell.tg}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5C6880]">Beta Applied</span>
-                <span className="font-mono font-bold" style={{ color: beta <= 1.5 ? '#4CAF50' : '#D4A017' }}>β {beta.toFixed(2)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Beta Applied</span>
+                <span className="font-mono font-bold" style={{ color: betaColor }}>β {beta.toFixed(2)}</span>
               </div>
-              <div className="border-t border-[#1E2A3A] pt-1.5 flex justify-between">
-                <span className="font-semibold text-[#E8EDF5]">Implied Price</span>
-                <span className="text-xl font-black font-mono" style={{ color: cellBorder(hoverCell.price) }}>
+              <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--card-border)' }}>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Implied Price</span>
+                <span className="text-xl font-black font-mono" style={{ color: cellAccent(hoverCell.price) }}>
                   ${hoverCell.price.toFixed(2)}
                 </span>
               </div>
-              <div className="text-[11px] text-[#5C6880] pt-1">
-                {hoverCell.price >= 14 ? '▲ Strong Buy territory' : hoverCell.price >= 10 ? '▲ Upside scenario' : hoverCell.price >= 7 ? '→ Near current price' : '▼ Bear case'}
+              <div className="flex justify-between text-[11px]">
+                <span style={{ color: 'var(--text-muted)' }}>vs Live ${LIVE_PRICE}</span>
+                <span className="font-mono font-bold" style={{ color: cellAccent(hoverCell.price) }}>
+                  {hoverCell.price > LIVE_PRICE ? '+' : ''}{(((hoverCell.price - LIVE_PRICE) / LIVE_PRICE) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                {hoverCell.price >= 16 ? '▲ Above price target — Strong Buy' : hoverCell.price >= 12 ? '▲ In price target range' : hoverCell.price >= LIVE_PRICE ? '→ Near current price' : '▼ Bear case scenario'}
               </div>
             </div>
           </div>

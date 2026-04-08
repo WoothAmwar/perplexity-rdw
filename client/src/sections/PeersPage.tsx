@@ -14,9 +14,10 @@ interface Peer {
 }
 
 const PEERS: Peer[] = [
-  { ticker: 'RDW', name: 'Redwire', evRevenue: 1.3, evEbitda: -8, revenueGrowth: 42, ebitdaMargin: -14.9, color: '#D4A017', isRdw: true },
-  { ticker: 'KTOS', name: 'Kratos Defense', evRevenue: 3.8, evEbitda: 28, revenueGrowth: 14, ebitdaMargin: 8.5, color: '#1ABCB4', isRdw: false },
-  { ticker: 'AVAV', name: 'AeroVironment', evRevenue: 4.2, evEbitda: 32, revenueGrowth: 18, ebitdaMargin: 12.1, color: '#8B5CF6', isRdw: false },
+  // Memo-verified (April 6 2026): RDW TEV $1,554M / FY2026E Rev $475M = 3.3x; AVAV ~$9B / $1,904M = 4.7x; KTOS ~$12.4B / $1,664M = 7.5x
+  { ticker: 'RDW', name: 'Redwire', evRevenue: 3.3, evEbitda: 103.6, revenueGrowth: 41.6, ebitdaMargin: 3.2, color: '#C8102E', isRdw: true },
+  { ticker: 'KTOS', name: 'Kratos Defense', evRevenue: 7.5, evEbitda: 74.8, revenueGrowth: 23.6, ebitdaMargin: 10.0, color: '#0EA5E9', isRdw: false },
+  { ticker: 'AVAV', name: 'AeroVironment', evRevenue: 4.7, evEbitda: 33.0, revenueGrowth: 15, ebitdaMargin: 14.3, color: '#8B5CF6', isRdw: false },
   { ticker: 'RKLB', name: 'Rocket Lab', evRevenue: 6.8, evEbitda: -45, revenueGrowth: 32, ebitdaMargin: -22.0, color: '#C0392B', isRdw: false },
   { ticker: 'MNTS', name: 'Momentus', evRevenue: 2.1, evEbitda: -120, revenueGrowth: 60, ebitdaMargin: -180.0, color: '#5C6880', isRdw: false },
   { ticker: 'SPIR', name: 'Spire Global', evRevenue: 2.4, evEbitda: -18, revenueGrowth: 15, ebitdaMargin: -12.0, color: '#5C6880', isRdw: false },

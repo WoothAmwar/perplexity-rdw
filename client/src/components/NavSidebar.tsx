@@ -17,6 +17,7 @@ const PAGES = [
   { id: 'sotp', label: 'SOTP' },
   { id: 'valuation3d', label: '3D Val' },
   { id: 'catalysts', label: 'Catalysts' },
+  { id: 'sources', label: 'Sources' },
 ];
 
 export default function NavSidebar() {
@@ -60,13 +61,18 @@ export default function NavSidebar() {
           className="group flex items-center gap-2"
           data-testid={`nav-${id}`}
         >
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-right whitespace-nowrap text-[#D4A017] bg-[#0D1117] border border-[#1E2A3A] px-2 py-0.5 rounded font-mono">
+          <span
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-right whitespace-nowrap px-2 py-0.5 rounded font-mono"
+            style={{
+              color: 'var(--rdw-red)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--card-border)',
+            }}
+          >
             {label}
           </span>
           <div
-            className={`nav-dot transition-all duration-200 ${
-              active === id ? 'active scale-125' : 'hover:bg-[#3A4A5C]'
-            }`}
+            className={`nav-dot transition-all duration-200 ${active === id ? 'active scale-125' : ''}`}
           />
         </button>
       ))}

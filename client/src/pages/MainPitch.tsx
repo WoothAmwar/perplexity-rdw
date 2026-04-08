@@ -15,10 +15,11 @@ import PeersPage from '../sections/PeersPage';
 import SotpPage from '../sections/SotpPage';
 import Valuation3DPage from '../sections/Valuation3DPage';
 import CatalystsPage from '../sections/CatalystsPage';
+import SourcesPage from '../sections/SourcesPage';
 
 export default function MainPitch() {
   return (
-    <div className="relative" style={{ background: 'var(--space-bg)' }}>
+    <div className="relative">
       <NavSidebar />
       <CoverPage />
       <ThesisPage />
@@ -36,6 +37,7 @@ export default function MainPitch() {
       <SotpPage />
       <Valuation3DPage />
       <CatalystsPage />
+      <SourcesPage />
     </div>
   );
 }

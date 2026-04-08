@@ -1,28 +1,36 @@
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
+const LIVE_PRICE = 9.56;
+
 const keyMetrics = [
   { label: 'FY2025 Revenue', value: '$335.4M', change: '+10.3% YoY', up: true },
   { label: '2026E Revenue', value: '$475M', change: '$450–500M guided', up: true },
   { label: 'Contracted Backlog', value: '$411.2M', change: '+38.6% YoY', up: true },
-  { label: 'Book-to-Bill', value: '1.32x', change: 'Orders > Revenue', up: true },
-  { label: 'SOTP Fair Value', value: '$18.01', change: 'vs ~$7.47 current', up: true },
-  { label: 'DCF Fair Value', value: '$16.00', change: 'Base Case', up: true },
-  { label: 'Net Debt', value: '$213M', change: 'Refinanced to 2029', up: null },
-  { label: 'PIL-BOX Trials', value: '43', change: 'Active ISS programs', up: true },
+  { label: 'Book-to-Bill (FY25)', value: '1.32x', change: 'Q4 2025: 1.52x', up: true },
+  { label: 'SOTP Fair Value', value: '$18.01', change: `vs $${LIVE_PRICE} live`, up: true },
+  { label: '12M Price Target', value: '$16.00', change: 'BUY Rating', up: true },
+  { label: 'Net Debt', value: '$88M', change: 'Refinanced May 2029', up: null },
+  { label: 'Total Liquidity', value: '$130.2M', change: 'Record level', up: true },
 ];
 
 const segments = [
   {
     name: 'Space Infrastructure',
-    pct: 62,
-    color: '#D4A017',
-    desc: 'iROSA solar arrays, deployable structures, in-space manufacturing, RF antennas for civil/commercial/DoD satellites',
+    pct: 49,
+    color: 'var(--rdw-red)',
+    q4rev: '$54.5M',
+    backlog: '$299.8M',
+    bToB: '2.04x',
+    desc: 'iROSA/ELSA solar arrays, deployable structures, in-space manufacturing, Hammerhead RF antennas for EuroQCI and MATTEO (Belgium\'s first national security satellite)',
   },
   {
     name: 'Defense Technology',
-    pct: 38,
-    color: '#C0392B',
-    desc: 'Edge Autonomy UAS systems (Stalker XE), SOFC power stacks, multi-domain ISR payloads',
+    pct: 50,
+    color: '#0EA5E9',
+    q4rev: '$54.3M',
+    backlog: '$111.4M',
+    bToB: '0.99x',
+    desc: 'Edge Autonomy UAS systems (Stalker XE/FC — 433km range), SOFC power stacks, multi-domain ISR payloads. 85,000 sq ft Ann Arbor facility opened Nov 2025.',
   },
 ];
 
@@ -30,12 +38,19 @@ export default function SummaryPage() {
   return (
     <section id="summary" className="page-section">
       <div className="max-w-7xl mx-auto px-8">
-        <div className="mb-12">
-          <div className="section-eyebrow">Executive Summary</div>
-          <h2 className="section-title mb-4">
-            The Numbers,<br />
-            <span className="text-gradient-gold">Before the Story.</span>
-          </h2>
+        {/* flex-col layout: header top */}
+        <div className="section-layout-col mb-12">
+          <div className="mb-8">
+            <div className="section-eyebrow">Executive Summary</div>
+            <h2 className="section-title mb-4">
+              The Numbers,<br />
+              <span className="text-gradient-red">Before the Story.</span>
+            </h2>
+            <p className="section-subtitle max-w-3xl">
+              Verified against the April 6, 2026 memo and live market data.
+              All figures sourced from Redwire SEC filings and premium data providers.
+            </p>
+          </div>
         </div>
 
         {/* Metrics grid */}
@@ -46,7 +61,7 @@ export default function SummaryPage() {
               <div className="metric-label">{m.label}</div>
               <div
                 className="mt-2 text-[11px] font-mono"
-                style={{ color: m.up === true ? '#1ABCB4' : m.up === false ? '#C0392B' : '#5C6880' }}
+                style={{ color: m.up === true ? '#10B981' : m.up === false ? 'var(--rdw-red)' : 'var(--text-muted)' }}
               >
                 {m.up === true && '▲ '}{m.up === false && '▼ '}{m.change}
               </div>
@@ -54,27 +69,31 @@ export default function SummaryPage() {
           ))}
         </div>
 
-        {/* Business segments */}
+        {/* Business segments — Q4 2025 first-ever segment reporting */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
           <div>
-            <div className="section-eyebrow mb-4">Business Segments</div>
+            <div className="section-eyebrow mb-4">Q4 2025 — First Segment Reporting</div>
             <div className="space-y-4">
               {segments.map((s) => (
                 <div key={s.name} className="glass-card p-5">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm" style={{ background: s.color }} />
-                      <span className="font-semibold text-[15px] text-[#E8EDF5]">{s.name}</span>
+                      <span className="font-semibold text-[15px]" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
                     </div>
-                    <span className="font-mono text-lg font-bold" style={{ color: s.color }}>{s.pct}%</span>
+                    <span className="font-mono text-lg font-bold" style={{ color: s.color }}>{s.q4rev}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-[#1E2A3A] mb-3">
+                  <div className="h-2 rounded-full mb-3" style={{ background: 'var(--card-border)' }}>
                     <div
                       className="h-2 rounded-full transition-all duration-1000"
                       style={{ width: `${s.pct}%`, background: `linear-gradient(90deg, ${s.color}, ${s.color}80)` }}
                     />
                   </div>
-                  <p className="text-[12px] text-[#5C6880] leading-relaxed">{s.desc}</p>
+                  <div className="flex gap-4 mb-3 text-[11px]">
+                    <span style={{ color: 'var(--text-muted)' }}>Backlog: <span className="font-mono font-bold" style={{ color: 'var(--text-secondary)' }}>{s.backlog}</span></span>
+                    <span style={{ color: 'var(--text-muted)' }}>B/B: <span className="font-mono font-bold" style={{ color: s.color }}>{s.bToB}</span></span>
+                  </div>
+                  <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
                 </div>
               ))}
             </div>
@@ -87,28 +106,31 @@ export default function SummaryPage() {
               {[
                 ['Ticker', 'NYSE: RDW'],
                 ['Headquarters', 'Jacksonville, FL'],
-                ['Founded', '2020 (via merger of heritage space primes)'],
-                ['Employees', '~900'],
-                ['Market Cap', '~$400M (at $7.47)'],
-                ['Enterprise Value', '~$613M'],
-                ['EV/Rev 2026E', '~1.3x (peer avg: 3.2x)'],
-                ['Fiscal Year', 'December 31'],
+                ['Founded', '2020 (heritage space primes)'],
+                ['Employees', '~900 (+ 600 Edge Autonomy)'],
+                ['Market Cap', `$1.83B (at $${LIVE_PRICE})`],
+                ['Enterprise Value', '$1.55B'],
+                ['FWD EV/Sales', '3.3x (peers: 4.7–7.5x)'],
+                ['52-Week Range', '$4.87 – $22.25'],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between border-b border-[#1A2030] pb-2 last:border-0 last:pb-0">
-                  <span className="text-[#5C6880]">{k}</span>
-                  <span className="text-[#C8D0DC] font-mono text-right">{v}</span>
+                <div key={k} className="flex justify-between pb-2 last:pb-0"
+                  style={{ borderBottom: '1px solid var(--card-border)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>{k}</span>
+                  <span className="font-mono text-right" style={{ color: 'var(--text-secondary)' }}>{v}</span>
                 </div>
               ))}
             </div>
 
-            <div className="glass-card p-5 border-l-4 border-[#1ABCB4]">
-              <div className="text-[11px] text-[#1ABCB4] font-mono tracking-wider uppercase mb-2">Key Observation</div>
-              <p className="text-[13px] text-[#8892A4] leading-relaxed">
-                At 1.3x EV/Revenue against a{' '}
+            <div className="glass-card p-5" style={{ borderLeft: '4px solid #0EA5E9' }}>
+              <div className="text-[11px] font-mono tracking-wider uppercase mb-2" style={{ color: '#0EA5E9' }}>Key Valuation Observation</div>
+              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                At 3.3x FWD EV/Sales, RDW trades at a{' '}
+                <strong style={{ color: 'var(--rdw-red)' }}>30% discount to AVAV</strong> and a{' '}
+                <strong style={{ color: 'var(--rdw-red)' }}>56% discount to KTOS</strong> — despite RDW's{' '}
                 <GlossaryTooltip term="Book-to-Bill Ratio" definition="The ratio of new orders received to revenue billed. A ratio above 1.0x means the backlog is growing faster than revenue — a leading indicator of future sales growth.">
-                  1.32x book-to-bill
+                  41.6% organic growth rate
                 </GlossaryTooltip>{' '}
-                and record $411.2M backlog, RDW trades like a company in decline. The gap between contract momentum and valuation is the opportunity.
+                exceeding both peers. Fuel cell vertical integration, sovereign quantum positioning, and biotech regulatory moat have no direct peer analogues.
               </p>
             </div>
           </div>
@@ -117,9 +139,9 @@ export default function SummaryPage() {
         {/* Risk/reward snapshot */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Bull Case', value: '$22', note: 'SOTP + pharma upside', color: '#4CAF50' },
-            { label: 'Base Case', value: '$16', note: 'DCF at WACC 11.5%', color: '#D4A017' },
-            { label: 'Bear Case', value: '$9', note: 'Growth disappoint', color: '#C0392B' },
+            { label: 'Bull Case', value: '$22', note: 'Analyst high PT — Truist', color: '#10B981' },
+            { label: 'Base Case', value: '$16', note: 'SOTP 65% + DCF 35%', color: 'var(--rdw-red)' },
+            { label: 'Bear Case', value: '$9', note: 'Near current price', color: '#6B7280' },
           ].map((c) => (
             <div
               key={c.label}
@@ -127,8 +149,8 @@ export default function SummaryPage() {
               style={{ borderTop: `3px solid ${c.color}` }}
             >
               <div className="text-2xl font-bold font-mono mb-1" style={{ color: c.color }}>{c.value}</div>
-              <div className="text-[11px] font-semibold text-[#E8EDF5] mb-1">{c.label}</div>
-              <div className="text-[11px] text-[#5C6880]">{c.note}</div>
+              <div className="text-[11px] font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{c.label}</div>
+              <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{c.note}</div>
             </div>
           ))}
         </div>

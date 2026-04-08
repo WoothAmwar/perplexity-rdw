@@ -7,8 +7,8 @@ const pillars = [
     color: '#D4A017',
     icon: '🛰',
     headline: '$411.2M Contracted Backlog',
-    body: 'Redwire is one of only two companies in the world capable of manufacturing Roll-Out Solar Arrays (ROSA) at scale for crewed space stations. Six iROSA arrays have achieved 100% mission success on the ISS, powering it 20–30% more efficiently. This creates the kind of sticky, non-substitutable revenue that defines a moat.',
-    stat: '1.32x Book-to-Bill',
+    body: 'Redwire is one of only two companies in the world capable of manufacturing Roll-Out Solar Arrays (ROSA) at scale for crewed space stations. 7 of 8 iROSA arrays have been installed on the ISS, boosting station power from 160 kW to 215 kW (+30%). ELSA launched March 2026 — Moog contract validates commercial pivot. MATTEO is Belgium\'s first national security satellite, with Redwire as prime contractor.',
+    stat: '1.52x Q4 2025',
     statLabel: 'FY2025',
   },
   {
@@ -17,9 +17,9 @@ const pillars = [
     color: '#1ABCB4',
     icon: '🧬',
     headline: '43 PIL-BOX Trials',
-    body: 'Redwire\'s PIL-BOX system exploits the absence of gravity to grow pharmaceutical crystals that are larger, purer, and more ordered than anything achievable on Earth. This transforms drugs like Keytruda (Merck) from expensive intravenous (IV) infusions into subcutaneous (sub-Q) injections — saving $50K/patient/year. The $200–400B patent cliff creates the demand.',
-    stat: '$400B',
-    statLabel: 'Pharma Patent Cliff',
+    body: 'Redwire\'s PIL-BOX system exploits microgravity to grow pharmaceutical crystals with an 84% improvement rate. This transforms drugs like Keytruda ($29.5B peak revenue) from IV infusions into sub-Q injections. 43 units flown, 35+ molecules studied, BMS/Purdue/Butler partnerships active. With >$45B/year in failed trials [CB Insights] and $1–2B/drug development costs, the demand for novel formulations is structural.',
+    stat: '$29.5B',
+    statLabel: 'Keytruda Peak Rev',
   },
   {
     number: '03',
@@ -27,9 +27,9 @@ const pillars = [
     color: '#C0392B',
     icon: '⚡',
     headline: 'Edge Autonomy Acquisition',
-    body: 'Via Edge Autonomy, RDW owns the full stack for drone-based ISR (Intelligence, Surveillance & Reconnaissance): its own Solid Oxide Fuel Cell (SOFC) power stack, the Stalker XE long-endurance UAS, and software. Competitors AVAV and KTOS outsource power. RDW controls margins end-to-end.',
-    stat: '30% Longer',
-    statLabel: 'Endurance vs competitors',
+    body: 'Via Edge Autonomy, RDW owns the full stack: its own SOFC power stack, the Stalker XE (433 km range, 38.5 lb), and ISR software. 85,000 sq ft Ann Arbor facility opened November 2025. 200 aircraft deployed in 2025 to US SOF, NATO allies, and Ukraine. Competitors AVAV and KTOS outsource power — RDW controls margins end-to-end. $10.5B US defense-tech VC in H1 2025 [CB Insights] validates the macro.',
+    stat: '433 km',
+    statLabel: 'Stalker Range (fuel cell)',
   },
   {
     number: '04',
@@ -38,8 +38,8 @@ const pillars = [
     icon: '🔐',
     headline: 'Hammerhead + EuroQCI',
     body: 'NIST finalized post-quantum cryptography standards in 2024. Q-Day — when quantum computers crack RSA encryption — is consensus-estimated at 2029. Redwire\'s Hammerhead satellite and EuroQCI contract lock in the physical quantum-key distribution infrastructure before the deadline. This is a winner-take-all positioning moment.',
-    stat: '2029',
-    statLabel: 'Q-Day Deadline',
+    stat: '$9.8B',
+    statLabel: 'Quantum TAM by 2030 [Statista]',
   },
 ];
 
@@ -51,7 +51,7 @@ export default function ThesisPage() {
           <div className="section-eyebrow">Investment Thesis</div>
           <h2 className="section-title mb-4">
             Four Structural Moats.<br />
-            <span className="text-gradient-gold">One Radical Mismatch.</span>
+            <span className="text-gradient-red">One Radical Mismatch.</span>
           </h2>
           <p className="section-subtitle max-w-2xl">
             RDW sits at the intersection of four secular tailwinds — each independently worth a premium multiple. The market has priced none of them. Current price implies terminal decline; our work implies a $16 target.
