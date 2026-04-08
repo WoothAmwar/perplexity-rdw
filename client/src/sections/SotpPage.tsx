@@ -1,6 +1,59 @@
 import GlossaryTooltip from '../components/GlossaryTooltip';
+import { useState } from 'react';
 
 const LIVE_PRICE = 9.56;
+
+// ─── Bull / Base / Bear DCF scenario table ────────────────────────────────────
+const DCF_SCENARIOS = [
+  {
+    label: 'Bear Case',
+    color: '#6B7280',
+    assumptions: [
+      { item: 'FY2026E Revenue', value: '$455M' },
+      { item: 'FY2028E Revenue', value: '$600M' },
+      { item: 'Terminal Growth Rate', value: '2.5%' },
+      { item: 'WACC', value: '13.0%' },
+      { item: 'Peak EBITDA Margin', value: '6%' },
+      { item: 'Beta Assumption', value: '2.49 (unchanged)' },
+    ],
+    dcfValue: '$3.80',
+    sotpValue: '$12.40',
+    blended: '$7.00',
+    note: 'Beta unchanged; margins delay 2 years; no catalyst premium',
+  },
+  {
+    label: 'Base Case',
+    color: 'var(--rdw-red)',
+    assumptions: [
+      { item: 'FY2026E Revenue', value: '$475M' },
+      { item: 'FY2028E Revenue', value: '$710M' },
+      { item: 'Terminal Growth Rate', value: '3.5%' },
+      { item: 'WACC', value: '11.0%' },
+      { item: 'Peak EBITDA Margin', value: '9%' },
+      { item: 'Beta Assumption', value: '1.25 (re-rated)' },
+    ],
+    dcfValue: '$6.06',
+    sotpValue: '$18.01',
+    blended: '$16.00',
+    note: 'Our price target: SOTP 65% + DCF 35% + $2.17 catalyst premium',
+  },
+  {
+    label: 'Bull Case',
+    color: '#10B981',
+    assumptions: [
+      { item: 'FY2026E Revenue', value: '$500M' },
+      { item: 'FY2028E Revenue', value: '$820M' },
+      { item: 'Terminal Growth Rate', value: '4.0%' },
+      { item: 'WACC', value: '10.0%' },
+      { item: 'Peak EBITDA Margin', value: '12%' },
+      { item: 'Beta Assumption', value: '1.10 (peer compression)' },
+    ],
+    dcfValue: '$9.20',
+    sotpValue: '$24.50',
+    blended: '$22.00',
+    note: 'PIL-BOX commercial deal + DoD SOFC production contract + conglomerate discount narrows to 12%',
+  },
+];
 
 // Premium-sourced SOTP — from memo page 14 (April 6, 2026)
 const SOTP_SEGMENTS = [
@@ -67,6 +120,8 @@ const SOTP_SEGMENTS = [
 ];
 
 export default function SotpPage() {
+  const [selectedScenario, setSelectedScenario] = useState(1); // default base case
+  const scenario = DCF_SCENARIOS[selectedScenario];
   const positives = SOTP_SEGMENTS.filter(s => !s.perShare.startsWith('−'));
   const totalSegEV = 3705;
   const adjustedEV = 2964;
@@ -239,6 +294,93 @@ export default function SotpPage() {
                 Sources: PitchBook (Edge Autonomy 5.3x, SandboxAQ 57.5x), CB Insights (defense VC $10.5B H1 2025, pharma R&D costs), Statista Premium (quantum TAM $9.8B), Redwire SEC filings
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Bull / Base / Bear DCF Scenario Table */}
+        <div className="mt-10">
+          <div className="section-eyebrow mb-4">DCF Scenario Analysis — Bull / Base / Bear</div>
+          <div className="flex gap-3 mb-6">
+            {DCF_SCENARIOS.map((s, i) => (
+              <button
+                key={s.label}
+                onClick={() => setSelectedScenario(i)}
+                className="px-5 py-2.5 rounded-xl text-[12px] font-semibold transition-all flex-1"
+                style={{
+                  background: selectedScenario === i ? `${s.color}18` : 'transparent',
+                  borderColor: selectedScenario === i ? s.color : 'var(--card-border)',
+                  border: '1px solid',
+                  color: selectedScenario === i ? s.color : 'var(--text-muted)',
+                }}
+                data-testid={`scenario-${s.label}`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Assumptions */}
+            <div className="glass-card p-5" style={{ borderLeft: `4px solid ${scenario.color}` }}>
+              <div className="text-[10px] font-mono tracking-widest uppercase mb-4" style={{ color: scenario.color }}>
+                {scenario.label} — Key Assumptions
+              </div>
+              <div className="space-y-2">
+                {scenario.assumptions.map((a) => (
+                  <div key={a.item} className="flex justify-between items-center py-1.5" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                    <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{a.item}</span>
+                    <span className="font-mono font-semibold text-[12px]" style={{ color: scenario.color }}>{a.value}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] mt-4 font-mono" style={{ color: 'var(--text-muted)' }}>{scenario.note}</p>
+            </div>
+
+            {/* Outputs */}
+            <div className="glass-card p-5">
+              <div className="text-[10px] font-mono tracking-widest uppercase mb-4" style={{ color: scenario.color }}>
+                {scenario.label} — Valuation Outputs
+              </div>
+              <div className="space-y-4">
+                {[
+                  { label: 'DCF Intrinsic Value', value: scenario.dcfValue, weight: '35% weight' },
+                  { label: 'SOTP Fair Value', value: scenario.sotpValue, weight: '65% weight' },
+                ].map((row) => (
+                  <div key={row.label}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{row.label}</span>
+                      <span className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>{row.weight}</span>
+                    </div>
+                    <div className="text-[22px] font-black font-mono" style={{ color: scenario.color }}>{row.value}</div>
+                  </div>
+                ))}
+                <div
+                  className="rounded-xl p-4 text-center mt-2"
+                  style={{ background: `${scenario.color}10`, border: `2px solid ${scenario.color}30` }}
+                >
+                  <div className="text-[10px] font-mono tracking-widest uppercase mb-1" style={{ color: scenario.color }}>Blended Price Target</div>
+                  <div className="text-4xl font-black font-mono" style={{ color: scenario.color }}>{scenario.blended}</div>
+                  <div className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                    {((parseFloat(scenario.blended.replace('$', '')) - LIVE_PRICE) / LIVE_PRICE * 100).toFixed(0)}% vs current ${LIVE_PRICE}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* All-scenario comparison strip */}
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            {DCF_SCENARIOS.map((s) => (
+              <div
+                key={s.label}
+                className="glass-card p-4 text-center"
+                style={{ borderTop: `3px solid ${s.color}`, opacity: DCF_SCENARIOS[selectedScenario].label === s.label ? 1 : 0.55 }}
+              >
+                <div className="text-[11px] font-semibold mb-1" style={{ color: s.color }}>{s.label}</div>
+                <div className="text-[26px] font-black font-mono mb-0.5" style={{ color: s.color }}>{s.blended}</div>
+                <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>DCF: {s.dcfValue} · SOTP: {s.sotpValue}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

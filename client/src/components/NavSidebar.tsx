@@ -18,6 +18,7 @@ const PAGES = [
   { id: 'sotp', label: 'SOTP' },
   { id: 'valuation3d', label: '3D Val' },
   { id: 'catalysts', label: 'Catalysts' },
+  { id: 'research-edge', label: 'Research Edge' },
   { id: 'sources', label: 'Sources' },
 ];
 

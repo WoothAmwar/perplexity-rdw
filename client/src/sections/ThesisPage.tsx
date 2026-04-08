@@ -120,6 +120,42 @@ export default function ThesisPage() {
             {' '}— the losses are driven by non-cash items and development-stage contract costs, not structural impairment. With $450–500M revenue guided for FY2026 and defense production revenues ramping, we project EBITDA margin reaching +9% by FY2028E, implying $40M+ run-rate EBITDA — the exact threshold where institutional ownership typically re-enters.
           </p>
         </div>
+
+        {/* Structural barriers — why competitors CAN'T replicate */}
+        <div className="mt-8">
+          <div className="text-[10px] font-mono tracking-[4px] uppercase mb-4" style={{ color: 'var(--rdw-red)' }}>
+            Structural Barriers — Why Competitors Cannot Replicate
+          </div>
+          <div className="grid md:grid-cols-4 gap-3">
+            {[
+              {
+                barrier: 'iROSA 9-Year Flight Heritage',
+                why: 'ISS certification requires 9+ years of flight data. No competitor can compress this timeline — qualification for crewed stations is binary, not iterative.',
+                color: '#D4A017',
+              },
+              {
+                barrier: 'ITAR-Complete SOFC Stack',
+                why: 'Building a DoD-compliant solid oxide fuel cell requires 3–5 years of production ramp and a dedicated secure facility. AVAV/KTOS have neither the capex appetite nor the cleared facility.',
+                color: '#C0392B',
+              },
+              {
+                barrier: '43 Microgravity Drug Trials',
+                why: 'PIL-BOX pharma data represents 43 flights of IP and institutional relationships. A competitor starting today would need ISS access (scarce, lottery-based), a minimum 5-year clinical dataset, and FDA validation from scratch.',
+                color: '#1ABCB4',
+              },
+              {
+                barrier: 'EuroQCI Sovereign Contract',
+                why: 'The European Quantum Communication Infrastructure contract was won via a formal EU procurement. Recompete is 7–10 years away. QKD physical infrastructure is a natural monopoly — physics limits alternative approaches.',
+                color: '#8B5CF6',
+              },
+            ].map((b) => (
+              <div key={b.barrier} className="glass-card p-4" style={{ borderTop: `3px solid ${b.color}` }}>
+                <div className="text-[11px] font-semibold mb-2" style={{ color: b.color }}>{b.barrier}</div>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{b.why}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

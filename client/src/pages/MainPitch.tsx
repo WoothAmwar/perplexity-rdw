@@ -18,6 +18,7 @@ import SotpPage from '../sections/SotpPage';
 import Valuation3DPage from '../sections/Valuation3DPage';
 import CatalystsPage from '../sections/CatalystsPage';
 import SourcesPage from '../sections/SourcesPage';
+import ResearchEdgePage from '../sections/ResearchEdgePage';
 
 export default function MainPitch() {
   return (
@@ -41,6 +42,7 @@ export default function MainPitch() {
       <SotpPage />
       <Valuation3DPage />
       <CatalystsPage />
+      <ResearchEdgePage />
       <SourcesPage />
     </div>
   );

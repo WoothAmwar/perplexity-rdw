@@ -184,6 +184,58 @@ export default function EbitdaPage() {
             The institutional ownership threshold for most growth-stage defense/space companies is <strong className="text-[#4CAF50]">positive Adjusted EBITDA</strong>. Crossing zero in FY2027E is not just a milestone — it's when the buyer universe expands from ~40 institutional holders to 150+, compressing the multiple from 1.3x EV/Revenue to the peer average of 3.2x.
           </p>
         </div>
+
+        {/* EBITDA margin bridge: -14.9% → +9.0% */}
+        <div className="mt-10">
+          <div className="section-eyebrow mb-4">Margin Bridge: FY2025 (−14.9%) → FY2028E (+9.0%)</div>
+          <div className="glass-card p-6">
+            <div className="flex items-end gap-0 overflow-x-auto">
+              {[
+                { label: 'FY25 EBITDA Margin', value: -14.9, color: '#C0392B', isBase: true },
+                { label: 'Revenue Ramp', delta: '+12–15pp', value: 13, color: '#D4A017', isBase: false },
+                { label: 'Defense Mix Shift', delta: '+3–4pp', value: 3.5, color: '#C0392B', isBase: false },
+                { label: 'PIL-BOX Royalties', delta: '+2pp', value: 2, color: '#1ABCB4', isBase: false },
+                { label: 'Debt Cost Reduction', delta: '+1–2pp', value: 1.5, color: '#8B5CF6', isBase: false },
+                { label: 'FY28E EBITDA Margin', value: 9.0, color: '#10B981', isBase: true },
+              ].map((item, i) => {
+                const isStart = item.isBase && i === 0;
+                const isEnd = item.isBase && i !== 0;
+                const barH = Math.abs(item.value) * 8; // px per point
+                const isNeg = item.value < 0;
+                return (
+                  <div key={item.label} className="flex flex-col items-center flex-1 min-w-[90px]">
+                    {!item.isBase && (
+                      <div className="text-[10px] font-mono font-bold mb-1" style={{ color: item.color }}>{item.delta}</div>
+                    )}
+                    {item.isBase && (
+                      <div className="text-[10px] font-mono font-bold mb-1" style={{ color: item.color }}>
+                        {item.value > 0 ? `+${item.value}%` : `${item.value}%`}
+                      </div>
+                    )}
+                    <div
+                      className="w-full rounded-sm mx-1"
+                      style={{
+                        height: barH + 'px',
+                        background: item.color,
+                        opacity: item.isBase ? 0.9 : 0.65,
+                        minHeight: 12,
+                      }}
+                    />
+                    <div className="text-[9px] text-center mt-2 font-mono leading-tight px-1" style={{ color: 'var(--text-muted)' }}>
+                      {item.label}
+                    </div>
+                    {i < 5 && (
+                      <div className="text-[12px] font-bold mt-1" style={{ color: 'var(--text-muted)' }}>+</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 text-[10px] font-mono" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--card-border)', paddingTop: 12 }}>
+              −$50M EBITDA ÷ $335M revenue = −14.9% margin. Path to +9%: fixed cost absorption on $710M revenue (+13pp), defense mix shift (+3.5pp), PIL-BOX royalties (+2pp), debt cost reduction (+1.5pp). Sum = +20.0pp net improvement. Sources: RDW FY2025 10-K, management guidance, analyst estimates.
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { label: 'Backlog Map', id: 'backlog-map' },
   { label: 'Revenue / Financials', id: 'revenue' },
   { label: 'Catalysts', id: 'catalysts' },
+  { label: 'Research Edge', id: 'research-edge' },
 ];
 
 export default function TopNav() {
