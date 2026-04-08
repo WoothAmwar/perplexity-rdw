@@ -1,15 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
-import * as HighchartsMapModule from 'highcharts/modules/map';
+import * as d3 from 'd3';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 import { useTheme } from '../App';
-
-// Initialise Highcharts Maps module once — handle both ESM default and CommonJS
-const initMap = (HighchartsMapModule as any).default ?? HighchartsMapModule;
-if (typeof initMap === 'function') {
-  initMap(Highcharts);
-}
 
 // RDW backlog by country — total contracted backlog $411.2M
 const BACKLOG_COUNTRIES = [
@@ -92,173 +84,192 @@ const BACKLOG_COUNTRIES = [
   },
 ];
 
-// Lookup by hcKey for tooltip
+// Map hcKey → country data for hover
 const COUNTRY_MAP: Record<string, typeof BACKLOG_COUNTRIES[0]> = {};
 BACKLOG_COUNTRIES.forEach((c) => { COUNTRY_MAP[c.hcKey] = c; });
 
+// ISO Alpha-2 → hcKey (Highcharts uses mostly lowercase iso-a2)
+// We'll match GeoJSON iso-a2 field against our hcKey
+const ISO2_TO_HCKey: Record<string, string> = {
+  US: 'us', BE: 'be', GB: 'gb', UA: 'ua', AE: 'ae', JP: 'jp', AU: 'au',
+};
+
+const rScale = d3.scaleSqrt().domain([0, 245]).range([8, 50]);
+
 export default function BacklogMapPage() {
   const { dark } = useTheme();
-  const chartRef = useRef<HighchartsReact.RefObject>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [hovered, setHovered] = useState<typeof BACKLOG_COUNTRIES[0] | null>(null);
-  const [mapData, setMapData] = useState<any>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [geoData, setGeoData] = useState<any>(null);
 
+  // Load GeoJSON once
   useEffect(() => {
     fetch('/world.geo.json')
       .then((r) => r.json())
-      .then(setMapData);
+      .then(setGeoData);
   }, []);
 
-  // Rebuild options whenever theme or mapData changes
-  const options: Highcharts.Options | null = (() => {
-    if (!mapData) return null;
+  // Redraw map whenever geoData or theme changes
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el || !geoData) return;
 
-    const landFill  = dark ? '#1a2332' : '#dde4ed';
-    const border    = dark ? '#2d3a4d' : '#b8c2ce';
-    const bg        = dark ? '#0d1117' : '#f8fafc';
-    const ttBg      = dark ? '#111827' : '#ffffff';
-    const ttText    = dark ? '#9BA8BB' : '#1F2937';
-    const ttMuted   = dark ? '#6B7280' : '#6B7280';
+    const svg = d3.select(el);
+    svg.selectAll('*').remove();
 
-    // Build series: (a) choropleth base, (b) mapbubble overlay
-    // For mapbubble, per-point color is set via `marker.fillColor`
-    const bubbleSeries: Highcharts.SeriesMapbubbleOptions = {
-      type: 'mapbubble',
-      name: 'Backlog',
-      joinBy: ['hc-key', 'hcKey'],
-      minSize: '5%',
-      maxSize: '18%',
-      zMin: 0,
-      zMax: 245,
-      enableMouseTracking: true,
-      cursor: 'pointer',
-      dataLabels: {
-        enabled: true,
-        format: '{point.id}',
-        style: {
-          fontSize: '9px',
-          fontWeight: '700',
-          color: '#ffffff',
-          textOutline: 'none',
-        },
-        allowOverlap: true,
-      },
-      states: {
-        hover: {
-          enabled: true,
-          brightness: 0.12,
-        },
-      },
-      data: BACKLOG_COUNTRIES.map((c) => ({
-        hcKey: c.hcKey,
-        id: c.id,
-        z: c.value,
-        lat: c.lat,
-        lon: c.lon,
-        color: c.color,
-        name: c.name,
-        // Custom fields for tooltip
-        customPct: c.pct,
-        customValue: c.value,
-        customPrograms: c.programs,
-        marker: {
-          fillColor: c.color + 'AA', // 67% opacity
-          lineColor: c.color,
-          lineWidth: 1.5,
-        },
-      })) as any,
-      tooltip: {
-        pointFormatter(this: Highcharts.Point): string {
-          const pt = this as any;
-          const c = COUNTRY_MAP[pt.hcKey];
-          if (!c) return '';
-          const lines = c.programs.map((p) =>
-            `<span style="color:${ttMuted}">· ${p}</span>`
-          ).join('<br/>');
-          return `<span style="color:${c.color};font-weight:700;font-size:12px;">${c.name}</span><br/>
-<span style="font-family:'Space Mono',monospace;font-weight:600;color:${ttText}">$${c.value}M · ${c.pct}% of backlog</span><br/><br/>
-${lines}`;
-        },
-      },
-    };
+    const W = el.clientWidth || 820;
+    const H = Math.round(W * 0.50);
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('width', W).attr('height', H);
 
-    const mapSeries: Highcharts.SeriesMapOptions = {
-      type: 'map',
-      name: 'World',
-      mapData: mapData,
-      joinBy: 'hc-key',
-      data: BACKLOG_COUNTRIES.map((c) => ({
-        'hc-key': c.hcKey,
-        value: c.value,
-        // Highlight country fill subtly
-        color: c.color + '20', // 12% opacity tint
-      })),
-      nullColor: landFill,
-      borderColor: border,
-      borderWidth: 0.4,
-      enableMouseTracking: false,
-      states: {
-        hover: { enabled: false },
-      },
-      dataLabels: { enabled: false },
-    };
+    // Equirectangular projection — clean, flat, realistic country shapes
+    const projection = d3.geoNaturalEarth1()
+      .scale(W / 6.3)
+      .translate([W / 2, H / 2]);
 
-    return {
-      chart: {
-        map: mapData,
-        backgroundColor: bg,
-        margin: [0, 0, 0, 0],
-        spacing: [4, 4, 4, 4],
-        animation: { duration: 400 },
-        style: { fontFamily: "'Inter', 'Space Mono', sans-serif" },
-      },
-      title: { text: '' },
-      subtitle: { text: '' },
-      credits: { enabled: false },
-      legend: { enabled: false },
-      colorAxis: { visible: false },
+    const path = d3.geoPath().projection(projection);
 
-      mapNavigation: {
-        enabled: true,
-        enableMouseWheelZoom: false,
-        buttonOptions: {
-          theme: {
-            fill: dark ? '#1a2332' : '#f0f2f5',
-            stroke: dark ? '#2d3a4d' : '#c5cdd9',
-            style: { color: dark ? '#9BA8BB' : '#374151' },
-          },
-        },
-      },
+    // Sphere background (ocean)
+    svg.append('path')
+      .datum({ type: 'Sphere' } as any)
+      .attr('d', path as any)
+      .attr('fill', dark ? '#0d1b2a' : '#dce8f5');
 
-      tooltip: {
-        useHTML: true,
-        backgroundColor: ttBg,
-        borderWidth: 0,
-        borderRadius: 8,
-        shadow: true,
-        padding: 12,
-        style: { color: ttText, fontSize: '11px', pointerEvents: 'none' },
-        headerFormat: '',
-      },
+    // Graticule
+    svg.append('path')
+      .datum(d3.geoGraticule()())
+      .attr('d', path as any)
+      .attr('fill', 'none')
+      .attr('stroke', dark ? '#1e2f40' : '#c9d8e8')
+      .attr('stroke-width', 0.3)
+      .attr('stroke-opacity', 0.6);
 
-      plotOptions: {
-        series: {
-          point: {
-            events: {
-              mouseOver(this: Highcharts.Point) {
-                const pt = this as any;
-                if (pt.hcKey) setHovered(COUNTRY_MAP[pt.hcKey] || null);
-              },
-              mouseOut() {
-                setHovered(null);
-              },
-            },
-          },
-        },
-      },
+    // Country fills — color highlighted countries, neutral for others
+    svg.append('g')
+      .selectAll('path')
+      .data(geoData.features)
+      .join('path')
+      .attr('d', (d: any) => path(d as any) || '')
+      .attr('fill', (d: any) => {
+        const iso2 = d.properties['iso-a2'];
+        const hcKey = ISO2_TO_HCKey[iso2];
+        if (hcKey && COUNTRY_MAP[hcKey]) {
+          return COUNTRY_MAP[hcKey].color + '28'; // ~16% tint
+        }
+        return dark ? '#1a2a3a' : '#e2e9f1';
+      })
+      .attr('stroke', dark ? '#28394d' : '#b4c4d4')
+      .attr('stroke-width', 0.4);
 
-      series: [mapSeries as any, bubbleSeries as any],
-    };
-  })();
+    // Sphere border
+    svg.append('path')
+      .datum({ type: 'Sphere' } as any)
+      .attr('d', path as any)
+      .attr('fill', 'none')
+      .attr('stroke', dark ? '#2d4560' : '#9db8ce')
+      .attr('stroke-width', 0.8);
+
+    // ── Bubbles ──────────────────────────────────────────────────────────────
+    const bubbleGroup = svg.append('g').attr('class', 'bubbles');
+
+    BACKLOG_COUNTRIES.forEach((c) => {
+      const coords = projection([c.lon, c.lat]);
+      if (!coords) return;
+      const [cx, cy] = coords;
+      const r = rScale(c.value);
+
+      const g = bubbleGroup.append('g')
+        .style('cursor', 'pointer')
+        .on('mouseenter', (event: MouseEvent) => {
+          const rect = el.getBoundingClientRect();
+          setHovered(c);
+          setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+        })
+        .on('mousemove', (event: MouseEvent) => {
+          const rect = el.getBoundingClientRect();
+          setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+        })
+        .on('mouseleave', () => setHovered(null));
+
+      // Pulse glow ring
+      g.append('circle')
+        .attr('cx', cx).attr('cy', cy)
+        .attr('r', r + 6)
+        .attr('fill', c.color)
+        .attr('fill-opacity', 0.09)
+        .attr('stroke', 'none');
+
+      // Main bubble
+      g.append('circle')
+        .attr('cx', cx).attr('cy', cy)
+        .attr('r', r)
+        .attr('fill', c.color)
+        .attr('fill-opacity', 0.58)
+        .attr('stroke', c.color)
+        .attr('stroke-width', 1.8)
+        .attr('stroke-opacity', 0.9);
+
+      // ID label inside bubble (only when large enough)
+      if (r >= 12) {
+        g.append('text')
+          .attr('x', cx).attr('y', cy)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('font-size', r >= 22 ? '11px' : '9px')
+          .attr('font-weight', '700')
+          .attr('font-family', "'Space Mono', monospace")
+          .attr('fill', 'white')
+          .attr('fill-opacity', 0.95)
+          .attr('pointer-events', 'none')
+          .text(c.id);
+      }
+
+      // $M label below bubble
+      if (r >= 10) {
+        g.append('text')
+          .attr('x', cx).attr('y', cy + r + 12)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '9px')
+          .attr('font-weight', '600')
+          .attr('font-family', "'Space Mono', monospace")
+          .attr('fill', c.color)
+          .attr('fill-opacity', 0.92)
+          .attr('pointer-events', 'none')
+          .text(`$${c.value}M`);
+      }
+    });
+
+    // Pulse animation on USA (dominant)
+    const usaCoords = projection([-100, 38]);
+    if (usaCoords) {
+      const [ux, uy] = usaCoords;
+      const ur = rScale(245);
+      const pulseCircle = svg.append('circle')
+        .attr('cx', ux).attr('cy', uy)
+        .attr('r', ur)
+        .attr('fill', 'none')
+        .attr('stroke', '#C8102E')
+        .attr('stroke-width', 1.5)
+        .attr('pointer-events', 'none');
+
+      const doPulse = () => {
+        pulseCircle
+          .attr('r', ur).attr('opacity', 0.5)
+          .transition().duration(2200).ease(d3.easeSinOut)
+          .attr('r', ur + 16).attr('opacity', 0)
+          .on('end', doPulse);
+      };
+      doPulse();
+    }
+  }, [dark, geoData]);
+
+  // Tooltip position clamped inside SVG
+  const tt = hovered;
+  const svgW = svgRef.current?.clientWidth ?? 820;
+  const svgH = svgRef.current?.clientHeight ?? 410;
+  const ttW = 260, ttH = 100;
+  const ttX = Math.min(Math.max(tooltipPos.x + 14, 4), svgW - ttW - 4);
+  const ttY = tooltipPos.y > svgH * 0.65 ? tooltipPos.y - ttH - 14 : tooltipPos.y + 14;
 
   return (
     <section id="backlog-map" className="page-section">
@@ -290,23 +301,46 @@ ${lines}`;
               <div className="section-eyebrow mb-2 text-[10px]">
                 Backlog by Geography · Circle area ∝ $M committed · Hover for program detail
               </div>
-              <div style={{ minHeight: 280 }}>
-                {options ? (
-                  <HighchartsReact
-                    ref={chartRef}
-                    highcharts={Highcharts}
-                    constructorType="mapChart"
-                    options={options}
-                    containerProps={{
-                      style: { width: '100%', height: 320, borderRadius: 8, overflow: 'hidden' },
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="flex items-center justify-center text-[12px]"
-                    style={{ height: 320, color: 'var(--text-muted)' }}
-                  >
+              <div className="relative">
+                {!geoData && (
+                  <div className="flex items-center justify-center" style={{ height: 300, color: 'var(--text-muted)', fontSize: 12 }}>
                     Loading map…
+                  </div>
+                )}
+                <svg
+                  ref={svgRef}
+                  className="w-full rounded-lg"
+                  style={{ minHeight: 260, display: geoData ? 'block' : 'none' }}
+                  aria-label="Global backlog heatmap"
+                />
+                {/* Theme-aware DOM tooltip */}
+                {tt && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: ttX,
+                      top: ttY,
+                      zIndex: 50,
+                      background: 'var(--card-bg)',
+                      border: `1.5px solid ${tt.color}`,
+                      borderRadius: 8,
+                      padding: '10px 14px',
+                      maxWidth: ttW,
+                      pointerEvents: 'none',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                    }}
+                  >
+                    <div className="text-[12px] font-bold mb-0.5" style={{ color: tt.color }}>
+                      {tt.name}
+                    </div>
+                    <div className="text-[11px] font-mono font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>
+                      ${tt.value}M · {tt.pct}% of backlog
+                    </div>
+                    {tt.programs.map((p, i) => (
+                      <div key={i} className="text-[10px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                        · {p}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

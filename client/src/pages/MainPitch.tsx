@@ -1,4 +1,5 @@
 import NavSidebar from '../components/NavSidebar';
+import TopNav from '../components/TopNav';
 import CoverPage from '../sections/CoverPage';
 import ThesisPage from '../sections/ThesisPage';
 import SummaryPage from '../sections/SummaryPage';
@@ -20,7 +21,8 @@ import SourcesPage from '../sections/SourcesPage';
 
 export default function MainPitch() {
   return (
-    <div className="relative">
+    <div className="relative" style={{ paddingTop: 44 }}>
+      <TopNav />
       <NavSidebar />
       <CoverPage />
       <ThesisPage />

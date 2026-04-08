@@ -243,11 +243,10 @@ export default function RevenuePage() {
         .attr('width', nodeW).attr('height', Math.max(pos.h, 4))
         .attr('fill', node.color).attr('rx', 3);
 
-      // Label: left-aligned nodes show label to right, right-aligned to left
-      const isCol0 = pos.x < 10;
-      const isCol3 = pos.x > colW * 2.5;
-      const labelX = isCol0 ? pos.x + nodeW + 5 : pos.x - 5;
-      const anchor = isCol0 ? 'start' : 'end';
+      // ALL labels go to the RIGHT of their node — no left-anchored labels, no overlap
+      const labelPad = 5;
+      const labelX = pos.x + nodeW + labelPad;
+      const anchor = 'start';
       const midY = pos.y + pos.h / 2;
       const isCentral = node.id === 4; // backlog node
 

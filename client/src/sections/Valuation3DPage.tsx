@@ -280,8 +280,8 @@ export default function Valuation3DPage() {
     const onUp = () => { isDragging = false; };
     const onMove = (e: MouseEvent) => {
       if (!isDragging) return;
+      // Only allow Y-axis rotation (spin around X-Z plane) — no tilt
       meshGroup.rotation.y += (e.clientX - prevMX) * 0.008;
-      meshGroup.rotation.x += (e.clientY - prevMY) * 0.008;
       labelGroup.rotation.y = meshGroup.rotation.y;
       prevMX = e.clientX; prevMY = e.clientY;
     };

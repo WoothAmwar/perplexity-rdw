@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import GlossaryTooltip from '../components/GlossaryTooltip';
+import { useTheme } from '../App';
 
 interface Peer {
   ticker: string;
@@ -26,6 +27,7 @@ const PEERS: Peer[] = [
 
 export default function PeersPage() {
   const svgRef = useRef<SVGSVGElement>(null);
+  const { dark } = useTheme();
   const [tooltip, setTooltip] = useState<{ peer: Peer | null; x: number; y: number }>({ peer: null, x: 0, y: 0 });
 
   useEffect(() => {
@@ -47,12 +49,14 @@ export default function PeersPage() {
     const x = d3.scaleLinear().domain([0, 70]).range([0, iW]);
     const y = d3.scaleLinear().domain([-30, 20]).range([iH, 0]);
 
-    // Grid
+    // Grid — light mode gets softer lines
+    const gridStroke = dark ? '#1A2030' : '#E5E7EB';
+    const gridOpacity = dark ? 1 : 0.6;
     g.append('g').call(d3.axisLeft(y).tickSize(-iW).tickFormat(() => ''))
-      .selectAll('line').attr('stroke', '#1A2030');
+      .selectAll('line').attr('stroke', gridStroke).attr('stroke-opacity', gridOpacity);
     g.append('g').attr('transform', `translate(0,${iH})`)
       .call(d3.axisBottom(x).tickSize(-iH).tickFormat(() => ''))
-      .selectAll('line').attr('stroke', '#1A2030');
+      .selectAll('line').attr('stroke', gridStroke).attr('stroke-opacity', gridOpacity);
 
     // Zero EBITDA line
     g.append('line')
@@ -117,8 +121,9 @@ export default function PeersPage() {
     // Axes tick styling
     g.selectAll('.tick text').attr('fill', '#5C6880').attr('font-size', '10px').attr('font-family', "'Space Mono'");
     g.selectAll('.domain').remove();
-  }, []);
+  }, [dark]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   // Peer valuation multiple gap analysis
   const peerAvgEvRev = PEERS.filter((p) => !p.isRdw && p.evRevenue > 0).reduce((s, p) => s + p.evRevenue, 0) / (PEERS.length - 1);
 
