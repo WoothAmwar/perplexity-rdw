@@ -77,16 +77,6 @@ export default function CoverPage() {
 
       <div className="relative z-10 text-center max-w-5xl mx-auto px-8">
 
-        {/* SVG logo mark — no text header */}
-        <div className="flex items-center justify-center mb-12">
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-label="RDW Logo">
-            <circle cx="26" cy="26" r="25" stroke="#C8102E" strokeWidth="1.5" strokeDasharray="4 2" />
-            <path d="M14 16 H24 C30 16 34 20 34 25 C34 30 30 34 24 34 H14 Z" stroke="#C8102E" strokeWidth="2" fill="none" />
-            <path d="M24 34 L34 42" stroke="#C8102E" strokeWidth="2" />
-            <circle cx="26" cy="26" r="3" fill="#C8102E" />
-          </svg>
-        </div>
-
         {/* Main headline */}
         <h1 className="font-bold mb-4" style={{ fontSize: 'clamp(40px, 6vw, 80px)', lineHeight: 1.05, fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}>
           The Space<br />
