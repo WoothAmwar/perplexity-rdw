@@ -149,8 +149,8 @@ export default function PeersPage() {
           ].map((s) => (
             <div key={s.label} className="glass-card p-5 text-center" style={{ borderTop: `3px solid ${s.color}` }}>
               <div className="text-3xl font-black font-mono mb-1" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-[12px] font-semibold text-[#E8EDF5] mb-1">{s.label}</div>
-              <div className="text-[11px] text-[#5C6880]">{s.note}</div>
+              <div className="text-[12px] font-semibold mb-1" style={{ color: "var(--text-primary)" }}>{s.label}</div>
+              <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>{s.note}</div>
             </div>
           ))}
         </div>
@@ -159,7 +159,7 @@ export default function PeersPage() {
         <div className="section-eyebrow mb-2">Revenue Growth vs. EBITDA Margin — Peer Scatter</div>
         <div className="glass-card p-4 mb-8">
           <svg ref={svgRef} className="w-full" style={{ height: 360 }} />
-          <p className="text-[11px] text-[#3A4A5C] mt-2 font-mono text-center">Hover for detail · Dot size = relative significance</p>
+          <p className="text-[11px] mt-2 font-mono text-center" style={{ color: "var(--text-muted)" }}>Hover for detail · Dot size = relative significance</p>
         </div>
 
         {/* Peer table */}
@@ -179,7 +179,7 @@ export default function PeersPage() {
               {PEERS.map((p) => (
                 <tr key={p.ticker} style={p.isRdw ? { background: 'rgba(212,160,23,0.06)' } : {}}>
                   <td className="font-bold font-mono" style={{ color: p.color }}>{p.ticker}</td>
-                  <td className="text-[#C8D0DC]">{p.name}</td>
+                  <td className="" style={{ color: "var(--text-secondary)" }}>{p.name}</td>
                   <td className="text-right font-mono" style={{ color: p.isRdw ? '#D4A017' : '#8892A4' }}>{p.evRevenue}x</td>
                   <td className="text-right font-mono" style={{ color: p.evEbitda < 0 ? '#C0392B' : '#8892A4' }}>
                     {p.evEbitda < 0 ? 'NM' : `${p.evEbitda}x`}
@@ -216,8 +216,8 @@ export default function PeersPage() {
           <div className="font-bold mb-1" style={{ color: tooltip.peer.color }}>
             {tooltip.peer.ticker} — {tooltip.peer.name}
           </div>
-          <div className="space-y-0.5 text-[#8892A4]">
-            <div>EV/Revenue: <span className="text-[#C8D0DC]">{tooltip.peer.evRevenue}x</span></div>
+          <div className="space-y-0.5" style={{ color: "var(--text-secondary)" }}>
+            <div>EV/Revenue: <span className="" style={{ color: "var(--text-secondary)" }}>{tooltip.peer.evRevenue}x</span></div>
             <div>Revenue Growth: <span className="text-[#1ABCB4]">+{tooltip.peer.revenueGrowth}%</span></div>
             <div>EBITDA Margin: <span style={{ color: tooltip.peer.ebitdaMargin >= 0 ? '#4CAF50' : '#C0392B' }}>{tooltip.peer.ebitdaMargin.toFixed(1)}%</span></div>
           </div>

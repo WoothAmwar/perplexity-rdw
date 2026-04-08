@@ -171,7 +171,7 @@ export default function FuelCellPage() {
             <div key={s.label} className="metric-card text-center">
               <div className="metric-value" style={{ color: s.color }}>{s.value}</div>
               <div className="metric-label">{s.label}</div>
-              <div className="text-[11px] text-[#3A4A5C] mt-1">{s.sub}</div>
+              <div className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>{s.sub}</div>
             </div>
           ))}
         </div>
@@ -181,12 +181,12 @@ export default function FuelCellPage() {
           {Object.entries(NODE_COLORS).map(([type, color]) => (
             <div key={type} className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full" style={{ background: color }} />
-              <span className="text-[#5C6880] capitalize">{type === 'rdw' ? 'RDW Core' : type}</span>
+              <span className="capitalize" style={{ color: "var(--text-muted)" }}>{type === 'rdw' ? 'RDW Core' : type}</span>
             </div>
           ))}
           <div className="flex items-center gap-1.5">
             <div className="w-8 border-t border-dashed border-[#C0392B]" />
-            <span className="text-[#5C6880]">Outsourced dependency</span>
+            <span className="" style={{ color: "var(--text-muted)" }}>Outsourced dependency</span>
           </div>
         </div>
 
@@ -194,7 +194,7 @@ export default function FuelCellPage() {
           <svg ref={svgRef} className="w-full" style={{ height: 460 }} />
         </div>
 
-        <p className="text-[11px] text-[#3A4A5C] mt-3 text-center font-mono">
+        <p className="text-[11px] mt-3 text-center font-mono" style={{ color: "var(--text-muted)" }}>
           Drag nodes · Hover for detail · Tight = high synergy · Loose = low integration
         </p>
 
@@ -218,10 +218,10 @@ export default function FuelCellPage() {
                 ['EV/Revenue 2026E', '~1.3x (RDW)', '~4.2x (AVAV)', '~3.8x (KTOS)'],
               ].map(([cat, rdw, avav, ktos]) => (
                 <tr key={cat}>
-                  <td className="font-semibold text-[#E8EDF5] text-[12px]">{cat}</td>
+                  <td className="font-semibold text-[12px]" style={{ color: "var(--text-primary)" }}>{cat}</td>
                   <td className="text-[#D4A017] font-semibold">{rdw}</td>
-                  <td className="text-[#8892A4]">{avav}</td>
-                  <td className="text-[#8892A4]">{ktos}</td>
+                  <td className="" style={{ color: "var(--text-muted)" }}>{avav}</td>
+                  <td className="" style={{ color: "var(--text-muted)" }}>{ktos}</td>
                 </tr>
               ))}
             </tbody>
@@ -243,7 +243,7 @@ export default function FuelCellPage() {
             padding: '12px 16px',
             fontSize: 13,
             maxWidth: 280,
-            color: '#E8EDF5',
+            color: 'var(--text-primary)',
             pointerEvents: 'none',
             boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
           }}
@@ -251,7 +251,7 @@ export default function FuelCellPage() {
           <div className="font-bold mb-1" style={{ color: NODE_COLORS[tooltip.node.type as keyof typeof NODE_COLORS] }}>
             {tooltip.node.label}
           </div>
-          <div className="text-[12px] text-[#8892A4] leading-relaxed">{tooltip.node.description}</div>
+          <div className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{tooltip.node.description}</div>
           {tooltip.node.inhouse && (
             <div className="mt-2 text-[11px] text-[#1ABCB4] font-semibold">✓ Fully In-House</div>
           )}

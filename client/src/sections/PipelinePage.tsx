@@ -196,7 +196,7 @@ export default function PipelinePage() {
                 className="w-3 h-3 rounded-full"
                 style={{ background: STAGE_COLORS[stage], opacity: stage === 'heritage' ? 0.5 : 1 }}
               />
-              <span className="text-[11px] text-[#5C6880] font-mono">{label}</span>
+              <span className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>{label}</span>
             </div>
           ))}
         </div>
@@ -205,7 +205,7 @@ export default function PipelinePage() {
           <svg ref={svgRef} className="w-full" style={{ height: 500 }} />
         </div>
 
-        <p className="text-[11px] text-[#3A4A5C] mt-3 text-center font-mono">
+        <p className="text-[11px] mt-3 text-center font-mono" style={{ color: "var(--text-muted)" }}>
           Drag nodes freely · Hover for descriptions · Toggle backlog weight scale
         </p>
       </div>
@@ -224,7 +224,7 @@ export default function PipelinePage() {
             padding: '10px 14px',
             fontSize: 13,
             maxWidth: 260,
-            color: '#E8EDF5',
+            color: 'var(--text-primary)',
             pointerEvents: 'none',
           }}
         >

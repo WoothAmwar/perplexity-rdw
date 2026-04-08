@@ -69,16 +69,16 @@ export default function QuantumPage() {
         >
           <div>
             <div className="text-[11px] font-mono text-[#C0392B] tracking-widest uppercase mb-1">⚠ Urgency Signal</div>
-            <div className="text-[17px] font-bold text-[#E8EDF5]">
+            <div className="text-[17px] font-bold" style={{ color: "var(--text-primary)" }}>
               "Harvest Now, Decrypt Later" attacks are already happening
             </div>
-            <p className="text-[13px] text-[#8892A4] mt-1">
+            <p className="text-[13px] mt-1" style={{ color: "var(--text-secondary)" }}>
               Nation-state actors are capturing encrypted data today to decrypt it post-Q-Day. Every month without quantum-secure infrastructure is a solvable problem building in the background.
             </p>
           </div>
           <div className="text-center">
             <div className="text-4xl font-black font-mono text-[#C0392B]">2029</div>
-            <div className="text-[11px] text-[#5C6880] tracking-wider uppercase">Q-Day Estimate</div>
+            <div className="text-[11px] tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>Q-Day Estimate</div>
           </div>
         </div>
 
@@ -91,15 +91,15 @@ export default function QuantumPage() {
                 <tr>
                   <th className="text-left">Category</th>
                   <th className="text-left" style={{ color: '#D4A017' }}>Redwire (RDW) — Hardware QKD</th>
-                  <th className="text-left" style={{ color: '#8892A4' }}>SandboxAQ — Software PQC</th>
+                  <th className="text-left" style={{ color: 'var(--text-muted)' }}>SandboxAQ — Software PQC</th>
                 </tr>
               </thead>
               <tbody>
                 {comparison.map((row) => (
                   <tr key={row.category}>
-                    <td className="font-semibold text-[#E8EDF5] text-[12px] uppercase tracking-wide">{row.category}</td>
-                    <td className="text-[#C8D0DC]">{row.rdw}</td>
-                    <td className="text-[#5C6880]">{row.sandbox}</td>
+                    <td className="font-semibold text-[12px] uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>{row.category}</td>
+                    <td className="" style={{ color: "var(--text-secondary)" }}>{row.rdw}</td>
+                    <td className="" style={{ color: "var(--text-muted)" }}>{row.sandbox}</td>
                   </tr>
                 ))}
               </tbody>
@@ -130,7 +130,7 @@ export default function QuantumPage() {
                   >
                     {t.year}
                   </span>
-                  <span className="text-[13px] text-[#C8D0DC]">{t.event}</span>
+                  <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>{t.event}</span>
                 </div>
               </div>
             </div>
@@ -157,8 +157,8 @@ export default function QuantumPage() {
             },
           ].map((c) => (
             <div key={c.title} className="glass-card p-5 border-t-2" style={{ borderTopColor: c.color }}>
-              <div className="font-semibold text-[14px] text-[#E8EDF5] mb-2">{c.title}</div>
-              <p className="text-[12px] text-[#5C6880] leading-relaxed">{c.desc}</p>
+              <div className="font-semibold text-[14px] mb-2" style={{ color: "var(--text-primary)" }}>{c.title}</div>
+              <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-muted)" }}>{c.desc}</p>
             </div>
           ))}
         </div>

@@ -201,7 +201,7 @@ export default function SotpPage() {
                   style={{ background: 'var(--rdw-red-dim)', border: '2px solid var(--rdw-red-border)' }}>
                   <div className="text-[11px] font-mono tracking-widest uppercase mb-1" style={{ color: 'var(--rdw-red)' }}>12-Month Price Target</div>
                   <div className="text-5xl font-black font-mono" style={{ color: 'var(--rdw-red)' }}>$16.00</div>
-                  <div className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>BUY · +{(((16.00 - LIVE_PRICE) / LIVE_PRICE) * 100).toFixed(1)}% upside from ${LIVE_PRICE}</div>
+                  <div className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>LONG · +{(((16.00 - LIVE_PRICE) / LIVE_PRICE) * 100).toFixed(1)}% upside from ${LIVE_PRICE}</div>
                 </div>
               </div>
             </div>

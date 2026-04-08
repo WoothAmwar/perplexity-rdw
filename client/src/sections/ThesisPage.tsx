@@ -87,7 +87,7 @@ export default function ThesisPage() {
                   >
                     Pillar {p.number}
                   </div>
-                  <h3 className="text-[16px] font-semibold text-[#E8EDF5]">{p.title}</h3>
+                  <h3 className="text-[16px] font-semibold" style={{ color: "var(--text-primary)" }}>{p.title}</h3>
                 </div>
               </div>
 
@@ -98,13 +98,13 @@ export default function ThesisPage() {
                 {p.headline}
               </div>
 
-              <p className="text-sm text-[#8892A4] leading-relaxed mb-4">{p.body}</p>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>{p.body}</p>
 
-              <div className="flex items-end gap-2 pt-3 border-t border-[#1E2A3A]">
+              <div className="flex items-end gap-2 pt-3 border-t border-[var(--card-border)]">
                 <span className="text-2xl font-bold font-mono" style={{ color: p.color }}>
                   {p.stat}
                 </span>
-                <span className="text-[11px] text-[#5C6880] mb-1">{p.statLabel}</span>
+                <span className="text-[11px] mb-1" style={{ color: "var(--text-muted)" }}>{p.statLabel}</span>
               </div>
             </div>
           ))}
@@ -112,7 +112,7 @@ export default function ThesisPage() {
 
         {/* Bottom thesis statement */}
         <div className="mt-10 glass-card p-6 border-l-4 border-[#D4A017]">
-          <p className="text-[15px] text-[#C8D0DC] leading-relaxed">
+          <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             <span className="text-[#D4A017] font-semibold">Bear thesis rebuttal:</span> Critics cite FY2025 Adjusted EBITDA of –$50.3M and net loss of –$226.6M. We model this as a{' '}
             <GlossaryTooltip term="EBITDA Inflection" definition="The point where a company's earnings before interest, taxes, depreciation, and amortization cross from negative to positive — a binary re-rating event for growth companies.">
               classic pre-revenue-ramp trough

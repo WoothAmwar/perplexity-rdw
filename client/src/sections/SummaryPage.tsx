@@ -7,8 +7,8 @@ const keyMetrics = [
   { label: '2026E Revenue', value: '$475M', change: '$450–500M guided', up: true },
   { label: 'Contracted Backlog', value: '$411.2M', change: '+38.6% YoY', up: true },
   { label: 'Book-to-Bill (FY25)', value: '1.32x', change: 'Q4 2025: 1.52x', up: true },
-  { label: 'SOTP Fair Value', value: '$18.01', change: `vs $${LIVE_PRICE} live`, up: true },
-  { label: '12M Price Target', value: '$16.00', change: 'BUY Rating', up: true },
+  { label: 'SOTP Fair Value', value: '$18.01', change: `vs $${LIVE_PRICE} current`, up: true },
+  { label: '12M Price Target', value: '$16.00', change: 'LONG Rating', up: true },
   { label: 'Net Debt', value: '$88M', change: 'Refinanced May 2029', up: null },
   { label: 'Total Liquidity', value: '$130.2M', change: 'Record level', up: true },
 ];
@@ -50,6 +50,36 @@ export default function SummaryPage() {
               Verified against the April 6, 2026 memo and live market data.
               All figures sourced from Redwire SEC filings and premium data providers.
             </p>
+          </div>
+        </div>
+
+        {/* Why Now framing */}
+        <div
+          className="glass-card mb-10 p-6"
+          style={{ borderLeft: '4px solid #C8102E' }}
+        >
+          <div className="text-[10px] font-mono tracking-[4px] uppercase mb-3" style={{ color: 'var(--rdw-red)' }}>
+            The Catalyst for &ldquo;Why Now&rdquo;
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="space-y-1">
+              <div className="text-[11px] font-mono tracking-wider uppercase" style={{ color: '#4B5563' }}>A Year Ago — Too Early</div>
+              <p className="text-[13px] leading-relaxed font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Unresolved debt overhang, Edge Autonomy integration unproven, no segment-level transparency. Entry here meant absorbing full execution risk with no visibility on the inflection.
+              </p>
+            </div>
+            <div className="space-y-1" style={{ borderLeft: '1px solid var(--card-border)', paddingLeft: '24px' }}>
+              <div className="text-[11px] font-mono tracking-wider uppercase" style={{ color: 'var(--rdw-red)' }}>Today — The Entry Window</div>
+              <p className="text-[13px] leading-relaxed font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Debt refinanced to 2029. Q4 2025 segment reporting launched. Backlog at $411.2M (+38.6% YoY). EBITDA inflection on the horizon in H2 2026. The risk/reward is now asymmetric.
+              </p>
+            </div>
+            <div className="space-y-1" style={{ borderLeft: '1px solid var(--card-border)', paddingLeft: '24px' }}>
+              <div className="text-[11px] font-mono tracking-wider uppercase" style={{ color: '#4B5563' }}>A Year Later — Too Late</div>
+              <p className="text-[13px] leading-relaxed font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Once positive EBITDA is confirmed in H2 2026, 150+ institutional funds re-enter. The multiple re-rates before the annual report prints. Waiting means chasing, not owning.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -108,7 +138,7 @@ export default function SummaryPage() {
                 ['Headquarters', 'Jacksonville, FL'],
                 ['Founded', '2020 (heritage space primes)'],
                 ['Employees', '~900 (+ 600 Edge Autonomy)'],
-                ['Market Cap', `$1.83B (at $${LIVE_PRICE})`],
+                ['Market Cap', `$1.83B (at $${LIVE_PRICE} current)`],
                 ['Enterprise Value', '$1.55B'],
                 ['FWD EV/Sales', '3.3x (peers: 4.7–7.5x)'],
                 ['52-Week Range', '$4.87 – $22.25'],

@@ -151,6 +151,71 @@ export default function CatalystsPage() {
           </p>
         </div>
 
+        {/* WHY NOW — anchored catalyst framework */}
+        <div
+          className="glass-card p-7 mb-12 relative overflow-hidden"
+          style={{ borderTop: '3px solid #C8102E' }}
+        >
+          {/* BG accent */}
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,16,46,0.03))' }} />
+          <div className="relative z-10">
+            <div className="text-[10px] font-mono tracking-[4px] uppercase mb-4" style={{ color: 'var(--rdw-red)' }}>
+              The Catalyst for &ldquo;Why Now&rdquo;
+            </div>
+            <div className="grid md:grid-cols-3 gap-0">
+              {/* Column 1 — A year ago */}
+              <div className="pr-6 border-r" style={{ borderColor: 'var(--card-border)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: '#4B556320', color: '#4B5563', border: '1px solid #4B556340' }}>✕</div>
+                  <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: '#4B5563' }}>A Year Ago — Too Early</span>
+                </div>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  The $90M term loan matured in 2026 with no clear refinancing path. Edge Autonomy was newly acquired with integration risk fully open. Q4 2025 segment-level reporting hadn't launched yet — no visibility into margin by business unit. Entry meant absorbing full binary risk.
+                </p>
+              </div>
+              {/* Column 2 — Today */}
+              <div className="px-6 border-r" style={{ borderColor: 'var(--card-border)', background: 'rgba(200,16,46,0.03)', borderRadius: '0' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'rgba(200,16,46,0.15)', color: '#C8102E', border: '1px solid rgba(200,16,46,0.4)' }}>→</div>
+                  <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: '#C8102E' }}>Today — The Entry Window</span>
+                </div>
+                <p className="text-[13px] leading-relaxed font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  Debt refinanced through 2029. First segment reports confirm Defense at $54.3M / Space at $54.5M. Backlog $411.2M, book-to-bill 1.32x. H2 2026 EBITDA inflection is now a management-guided, consensus-accepted event — not a hope. The risk/reward is asymmetric today.
+                </p>
+              </div>
+              {/* Column 3 — A year from now */}
+              <div className="pl-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: '#4B556320', color: '#4B5563', border: '1px solid #4B556340' }}>✕</div>
+                  <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: '#4B5563' }}>A Year Later — Too Late</span>
+                </div>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Once H2 2026 prints positive Adjusted EBITDA, the institutional buyer universe expands from ~40 to 150+ funds. The multiple re-rates immediately — before the annual report is published. Waiting means chasing a re-rated stock, not entering the catalyst.
+                </p>
+              </div>
+            </div>
+            {/* Bottom stat bar */}
+            <div className="mt-6 pt-5 border-t flex flex-wrap gap-6 items-center" style={{ borderColor: 'var(--card-border)' }}>
+              <div className="text-center">
+                <div className="text-[22px] font-black font-mono" style={{ color: '#C8102E' }}>H2 2026</div>
+                <div className="text-[10px] font-mono tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>EBITDA Inflection (Mgmt Guided)</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[22px] font-black font-mono" style={{ color: '#10B981' }}>~40 → 150+</div>
+                <div className="text-[10px] font-mono tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>Institutional Funds (post-inflection)</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[22px] font-black font-mono" style={{ color: '#C8102E' }}>+67%</div>
+                <div className="text-[10px] font-mono tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>Upside to $16 PT Before Re-Rating</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[22px] font-black font-mono" style={{ color: '#D4A017' }}>8</div>
+                <div className="text-[10px] font-mono tracking-wider uppercase" style={{ color: 'var(--text-muted)' }}>Discrete Catalysts in Next 18 Months</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Catalysts timeline */}
         <div className="section-eyebrow mb-4">H1/H2 2026 Catalyst Timeline</div>
         <div className="catalyst-line pl-12 space-y-0 mb-12">
@@ -165,7 +230,7 @@ export default function CatalystsPage() {
               <div className="flex-1 glass-card glass-card-hover p-4">
                 <div className="flex flex-wrap gap-3 items-start justify-between mb-2">
                   <div>
-                    <div className="font-semibold text-[14px] text-[#E8EDF5]">{cat.event}</div>
+                    <div className="font-semibold text-[14px]" style={{ color: "var(--text-primary)" }}>{cat.event}</div>
                     <div className="flex gap-2 mt-1 flex-wrap">
                       <span
                         className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
@@ -182,7 +247,7 @@ export default function CatalystsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-[#5C6880]">Impact:</span>
+                    <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>Impact:</span>
                     <span
                       className="font-bold text-[12px]"
                       style={{ color: IMPACT_COLORS[cat.impact] || '#D4A017' }}
@@ -191,7 +256,7 @@ export default function CatalystsPage() {
                     </span>
                   </div>
                 </div>
-                <p className="text-[12px] text-[#8892A4] leading-relaxed">{cat.desc}</p>
+                <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{cat.desc}</p>
               </div>
             </div>
           ))}
@@ -199,7 +264,7 @@ export default function CatalystsPage() {
 
         {/* Risk matrix */}
         <div className="section-eyebrow mb-4">Risk / Mitigant Matrix</div>
-        <div className="overflow-x-auto rounded-xl border border-[#1E2A3A] mb-10">
+        <div className="overflow-x-auto rounded-xl border mb-10">
           <table className="data-table w-full" data-testid="risk-matrix">
             <thead>
               <tr>
@@ -212,7 +277,7 @@ export default function CatalystsPage() {
             <tbody>
               {RISKS.map((r) => (
                 <tr key={r.risk}>
-                  <td className="font-semibold text-[#E8EDF5] max-w-[160px]">{r.risk}</td>
+                  <td className="font-semibold max-w-[160px]" style={{ color: "var(--text-primary)" }}>{r.risk}</td>
                   <td className="text-center">
                     <span
                       className="px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -221,8 +286,8 @@ export default function CatalystsPage() {
                       {r.severity}
                     </span>
                   </td>
-                  <td className="text-center font-mono text-[#5C6880] text-[12px]">{r.prob}</td>
-                  <td className="text-[12px] text-[#8892A4] leading-relaxed max-w-[400px]">{r.mitigant}</td>
+                  <td className="text-center font-mono text-[12px]" style={{ color: "var(--text-secondary)" }}>{r.prob}</td>
+                  <td className="text-[12px] leading-relaxed max-w-[400px]" style={{ color: "var(--text-secondary)" }}>{r.mitigant}</td>
                 </tr>
               ))}
             </tbody>
@@ -242,21 +307,21 @@ export default function CatalystsPage() {
           <div className="relative z-10">
             <div className="text-[11px] font-mono text-[#D4A017] tracking-widest uppercase mb-4">Final Recommendation</div>
             <div className="flex justify-center gap-4 flex-wrap mb-6">
-              <span className="badge-buy text-sm">Strong Buy</span>
+              <span className="badge-long text-sm">Strong Long</span>
               <span className="badge-target text-sm">$16.00 PT</span>
-              <span className="px-4 py-1 rounded-full text-[12px] font-semibold border border-[#1E2A3A] text-[#5C6880]">
+              <span className="px-4 py-1 rounded-full text-[12px] font-semibold border" style={{ color: 'var(--text-muted)', borderColor: 'var(--card-border)' }}>
                 SOTP: $18.01
               </span>
             </div>
             <div className="text-5xl font-black font-mono text-gradient-gold mb-2">+67% Upside</div>
-            <p className="text-[14px] text-[#8892A4] max-w-2xl mx-auto leading-relaxed mt-4">
+            <p className="text-[14px] max-w-2xl mx-auto leading-relaxed mt-4" style={{ color: "var(--text-secondary)" }}>
               Redwire Corporation is a rare convergence play: a{' '}
               <GlossaryTooltip term="Space Infrastructure Monopoly" definition="Redwire is one of only two global manufacturers of roll-out solar arrays proven for crewed space stations, while also being the sole operational provider of pharmaceutical crystallization services from the ISS.">
                 space infrastructure monopoly
               </GlossaryTooltip>{' '}
-              with pharmaceutical patent-cliff optionality, quantum-security first-mover positioning, and a vertically integrated defense platform — all at a 65% discount to peer multiples. The eight catalysts above provide a roadmap for value recognition. We initiate with a Strong Buy and $16.00 price target.
+              with pharmaceutical patent-cliff optionality, quantum-security first-mover positioning, and a vertically integrated defense platform — all at a 65% discount to peer multiples. The eight catalysts above provide a roadmap for value recognition. We initiate with a Strong Long and $16.00 price target.
             </p>
-            <div className="mt-6 text-[10px] text-[#3A4A5C] font-mono">
+            <div className="mt-6 text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
               This research is for institutional investor informational purposes only. Not investment advice. All estimates are our own. April 2026.
             </div>
           </div>

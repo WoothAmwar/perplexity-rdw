@@ -166,17 +166,17 @@ export default function EbitdaPage() {
               data-testid={`ebitda-driver-${d.title}`}
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="font-semibold text-[14px] text-[#E8EDF5]">{d.title}</span>
+                <span className="font-semibold text-[14px]" style={{ color: "var(--text-primary)" }}>{d.title}</span>
                 <span className="text-sm font-bold font-mono" style={{ color: d.color }}>{d.impact}</span>
               </div>
-              <p className="text-[12px] text-[#8892A4] leading-relaxed">{d.detail}</p>
+              <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{d.detail}</p>
             </div>
           ))}
         </div>
 
         <div className="mt-6 p-5 glass-card border-l-4 border-[#4CAF50]">
           <div className="text-[11px] text-[#4CAF50] font-mono tracking-wider uppercase mb-2">Re-Rating Trigger</div>
-          <p className="text-[13px] text-[#C8D0DC] leading-relaxed">
+          <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             The institutional ownership threshold for most growth-stage defense/space companies is <strong className="text-[#4CAF50]">positive Adjusted EBITDA</strong>. Crossing zero in FY2027E is not just a milestone — it's when the buyer universe expands from ~40 institutional holders to 150+, compressing the multiple from 1.3x EV/Revenue to the peer average of 3.2x.
           </p>
         </div>

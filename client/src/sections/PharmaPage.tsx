@@ -109,7 +109,7 @@ export default function PharmaPage() {
       .attr('y', (d: any) => (d.y1 - d.y0) / 2 + 12)
       .attr('text-anchor', 'middle')
       .attr('font-size', (d: any) => Math.min(11, Math.max(8, (d.x1 - d.x0) / 10)))
-      .attr('fill', '#8892A4')
+      .attr('fill', '#4B5563')
       .attr('font-family', "'Space Mono', monospace")
       .text((d: any) => d.x1 - d.x0 > 80 ? `$${d.data.revenue}B` : '')
       .style('pointer-events', 'none');
@@ -179,8 +179,8 @@ export default function PharmaPage() {
             },
           ].map((c) => (
             <div key={c.title} className="glass-card p-5 border-t-2" style={{ borderTopColor: c.color }}>
-              <div className="font-semibold text-[14px] text-[#E8EDF5] mb-2">{c.title}</div>
-              <p className="text-[12px] text-[#8892A4] leading-relaxed">{c.body}</p>
+              <div className="font-semibold text-[14px] mb-2" style={{ color: "var(--text-primary)" }}>{c.title}</div>
+              <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{c.body}</p>
             </div>
           ))}
         </div>
@@ -195,12 +195,12 @@ export default function PharmaPage() {
           ].map((l) => (
             <div key={l.label} className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm" style={{ background: l.color }} />
-              <span className="text-[#5C6880]">{l.label}</span>
+              <span className="" style={{ color: "var(--text-muted)" }}>{l.label}</span>
             </div>
           ))}
           <div className="flex items-center gap-1.5">
             <span className="text-[#1ABCB4] text-[10px]">IV→SubQ</span>
-            <span className="text-[#5C6880]">= RDW IV-to-SubQ opportunity</span>
+            <span className="" style={{ color: "var(--text-muted)" }}>= RDW IV-to-SubQ opportunity</span>
           </div>
         </div>
         <div className="glass-card p-3 relative overflow-hidden">
@@ -216,15 +216,15 @@ export default function PharmaPage() {
           >
             <div className="flex items-start justify-between">
               <div>
-                <span className="font-bold text-xl text-[#E8EDF5]">{selected.name}</span>
-                <span className="ml-2 text-[#5C6880] text-sm">({selected.company})</span>
+                <span className="font-bold text-xl" style={{ color: "var(--text-primary)" }}>{selected.name}</span>
+                <span className="ml-2 text-sm" style={{ color: "var(--text-muted)" }}>({selected.company})</span>
               </div>
-              <button onClick={() => setSelected(null)} className="text-[#5C6880] hover:text-[#E8EDF5] text-lg">×</button>
+              <button onClick={() => setSelected(null)} className="text-lg" style={{ color: "var(--text-muted)" }}>×</button>
             </div>
             <div className="flex flex-wrap gap-4 mt-3 text-sm">
-              <div><span className="text-[#5C6880]">Revenue:</span> <span className="text-[#D4A017] font-mono font-bold">${selected.revenue}B/yr</span></div>
-              <div><span className="text-[#5C6880]">Patent expiry:</span> <span style={{ color: COLOR_BY_EXPIRY(selected.expiry) }} className="font-mono font-bold">{selected.expiry}</span></div>
-              <div><span className="text-[#5C6880]">Indication:</span> <span className="text-[#C8D0DC]">{selected.indication}</span></div>
+              <div><span className="" style={{ color: "var(--text-muted)" }}>Revenue:</span> <span className="text-[#D4A017] font-mono font-bold">${selected.revenue}B/yr</span></div>
+              <div><span className="" style={{ color: "var(--text-muted)" }}>Patent expiry:</span> <span style={{ color: COLOR_BY_EXPIRY(selected.expiry) }} className="font-mono font-bold">{selected.expiry}</span></div>
+              <div><span className="" style={{ color: "var(--text-muted)" }}>Indication:</span> <span className="" style={{ color: "var(--text-secondary)" }}>{selected.indication}</span></div>
               {selected.ivToSubQ && (
                 <div className="px-3 py-1 rounded-full text-[11px] font-semibold bg-[#1ABCB420] border border-[#1ABCB4] text-[#1ABCB4]">
                   IV → Sub-Q Opportunity
@@ -233,7 +233,7 @@ export default function PharmaPage() {
             </div>
             <div className="mt-3 p-3 rounded-lg" style={{ background: 'rgba(212,160,23,0.08)' }}>
               <div className="text-[11px] text-[#D4A017] font-mono tracking-wider uppercase mb-1">RDW PIL-BOX Solution</div>
-              <p className="text-[13px] text-[#C8D0DC] leading-relaxed">{selected.rdwSolution}</p>
+              <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{selected.rdwSolution}</p>
             </div>
           </div>
         )}
@@ -260,9 +260,9 @@ export default function PharmaPage() {
             <div className="font-bold text-sm mb-1" style={{ color: COLOR_BY_EXPIRY(tooltip.drug.expiry) }}>
               {tooltip.drug.name} — {tooltip.drug.company}
             </div>
-            <div className="text-[#8892A4] mb-2">{tooltip.drug.indication}</div>
+            <div className="mb-2" style={{ color: "var(--text-muted)" }}>{tooltip.drug.indication}</div>
             <div className="font-semibold text-[#D4A017] text-[11px] uppercase tracking-wide mb-1">PIL-BOX Solution:</div>
-            <div className="text-[#C8D0DC] text-[12px] leading-relaxed">{tooltip.drug.rdwSolution}</div>
+            <div className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{tooltip.drug.rdwSolution}</div>
           </div>
         )}
       </div>

@@ -86,7 +86,7 @@ export default function SpacePage() {
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-2xl">{prog.icon}</span>
                     <div>
-                      <h3 className="font-bold text-[17px] text-[#E8EDF5]">{prog.title}</h3>
+                      <h3 className="font-bold text-[17px]" style={{ color: "var(--text-primary)" }}>{prog.title}</h3>
                       <span
                         className="inline-block px-3 py-0.5 rounded-full text-[11px] font-semibold mt-1"
                         style={{ background: prog.color + '20', color: prog.color, border: `1px solid ${prog.color}40` }}
@@ -95,10 +95,10 @@ export default function SpacePage() {
                       </span>
                     </div>
                   </div>
-                  <p className="text-[13px] text-[#8892A4] leading-relaxed mb-4">{prog.desc}</p>
+                  <p className="text-[13px] leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>{prog.desc}</p>
                   <div
-                    className="p-3 rounded-lg text-[12px] text-[#C8D0DC] leading-relaxed"
-                    style={{ background: prog.color + '10', borderLeft: `3px solid ${prog.color}` }}
+                    className="p-3 rounded-lg text-[12px] leading-relaxed"
+                    style={{ color: "var(--text-secondary)", background: prog.color + '10', borderLeft: `3px solid ${prog.color}` }}
                   >
                     {prog.rdwDetail}
                   </div>
@@ -108,7 +108,7 @@ export default function SpacePage() {
                     <tbody>
                       {prog.data.map(([k, v]) => (
                         <tr key={k}>
-                          <td className="text-[#5C6880] text-[12px]">{k}</td>
+                          <td className="text-[12px]" style={{ color: "var(--text-muted)" }}>{k}</td>
                           <td className="font-semibold text-right" style={{ color: prog.color }}>{v}</td>
                         </tr>
                       ))}
@@ -131,10 +131,10 @@ export default function SpacePage() {
               data-testid={`whitepaper-${wp.year}`}
             >
               <div className="flex justify-between items-start gap-2 mb-2">
-                <span className="font-semibold text-[14px] text-[#E8EDF5] leading-tight">{wp.title}</span>
-                <span className="text-[11px] text-[#5C6880] font-mono flex-shrink-0 mt-0.5">{wp.year}</span>
+                <span className="font-semibold text-[14px] leading-tight" style={{ color: "var(--text-primary)" }}>{wp.title}</span>
+                <span className="text-[11px] font-mono flex-shrink-0 mt-0.5" style={{ color: "var(--text-muted)" }}>{wp.year}</span>
               </div>
-              <p className="text-[12px] text-[#8892A4] leading-relaxed">{wp.implication}</p>
+              <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{wp.implication}</p>
             </div>
           ))}
         </div>
@@ -145,10 +145,10 @@ export default function SpacePage() {
           style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(212,160,23,0.05))', border: '1px solid rgba(139,92,246,0.3)' }}
         >
           <div className="text-[11px] font-mono text-[#8B5CF6] tracking-widest uppercase mb-2">Moonshot Optionality</div>
-          <h3 className="text-[18px] font-bold text-[#E8EDF5] mb-3">
+          <h3 className="text-[18px] font-bold mb-3" style={{ color: "var(--text-primary)" }}>
             ZBLAN Fiber: The Next Fiber Optic Revolution
           </h3>
-          <p className="text-[13px] text-[#8892A4] leading-relaxed max-w-3xl">
+          <p className="text-[13px] leading-relaxed max-w-3xl" style={{ color: "var(--text-secondary)" }}>
             <GlossaryTooltip term="ZBLAN Fiber" definition="A type of fluoride glass optical fiber that transmits infrared light with 100x less signal attenuation (signal loss) than conventional silica fiber. It would revolutionize long-distance communications, medical imaging, and laser surgery — but ZBLAN crystallizes during manufacturing on Earth, making it unusable. In microgravity, it can be drawn into perfect fibers.">
               ZBLAN fiber optics
             </GlossaryTooltip>{' '}

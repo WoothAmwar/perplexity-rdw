@@ -193,7 +193,7 @@ export default function DeleverPage() {
                       <td className="text-right font-mono" style={{ color: row.year === 'FY28E' ? '#4CAF50' : '#D4A017' }}>
                         ${row.interest}M
                       </td>
-                      <td className="text-[#5C6880] text-[12px]">{row.rate}</td>
+                      <td className="text-[12px]" style={{ color: "var(--text-muted)" }}>{row.rate}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -211,7 +211,7 @@ export default function DeleverPage() {
             ].map((item, i) => (
               <div key={i} className="flex gap-3 items-start">
                 <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: item.color }} />
-                <p className="text-[13px] text-[#8892A4] leading-relaxed">{item.pt}</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{item.pt}</p>
               </div>
             ))}
           </div>

@@ -226,7 +226,7 @@ export default function RevenuePage() {
             <div className="glass-card p-4" style={{ height: 320 }}>
               <Bar data={barData} options={barOptions as any} />
             </div>
-            <p className="text-[11px] text-[#3A4A5C] mt-2 font-mono text-center">
+            <p className="text-[11px] mt-2 font-mono text-center" style={{ color: "var(--text-muted)" }}>
               Solid fill = Actual · Transparent = Estimate
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function RevenuePage() {
             <div className="section-eyebrow mb-3">Revenue Visibility — Backlog Sankey</div>
             <div className="glass-card p-4 relative">
               <svg ref={sankeyRef} className="w-full" style={{ height: 280 }} />
-              <p className="text-[11px] text-[#3A4A5C] mt-2 font-mono text-center">
+              <p className="text-[11px] mt-2 font-mono text-center" style={{ color: "var(--text-muted)" }}>
                 Hover flows · Width ∝ $M of backlog
               </p>
             </div>
@@ -263,11 +263,11 @@ export default function RevenuePage() {
                   <tr key={row.year}>
                     <td className="font-semibold">
                       {row.year}
-                      {!row.actual && <span className="ml-1 text-[10px] text-[#5C6880]">E</span>}
+                      {!row.actual && <span className="ml-1 text-[10px]" style={{ color: "var(--text-muted)" }}>E</span>}
                     </td>
                     <td className="text-right text-[#D4A017] font-mono">${row.space}M</td>
                     <td className="text-right text-[#C0392B] font-mono">${row.defense}M</td>
-                    <td className="text-right font-bold font-mono text-[#E8EDF5]">${row.total}M</td>
+                    <td className="text-right font-bold font-mono" style={{ color: "var(--text-primary)" }}>${row.total}M</td>
                     <td className="text-right font-mono" style={{ color: i > 0 ? '#1ABCB4' : '#5C6880' }}>
                       {i > 0 ? `+${growth}` : '—'}
                     </td>

@@ -561,7 +561,7 @@ export default function Valuation3DPage() {
                 </span>
               </div>
               <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                {hoverCell.price >= 16 ? '▲ Above price target — Strong Buy' : hoverCell.price >= 12 ? '▲ In price target range' : hoverCell.price >= LIVE_PRICE ? '→ Near current price' : '▼ Bear case scenario'}
+                {hoverCell.price >= 16 ? '▲ Above price target — Strong Long' : hoverCell.price >= 12 ? '▲ In price target range' : hoverCell.price >= LIVE_PRICE ? '→ Near current price' : '▼ Bear case scenario'}
               </div>
             </div>
           </div>
