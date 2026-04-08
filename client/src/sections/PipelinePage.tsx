@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTheme } from '../App';
 import * as d3 from 'd3';
 
 interface Node {
@@ -53,6 +54,232 @@ const STAGE_LABELS = {
   active: 'Active Production',
   frontier: 'Growth Frontier',
 };
+
+// Revenue mix data: reconstructed from public earnings disclosures, program delivery cadence,
+// and CFO commentary on development-vs-production program transitions (SEC filings 2021–2025).
+// "Development" = programs in design/test/EAC-at-risk phase.
+// "Production" = programs in volume/repeat-delivery phase (iROSA, PIL-BOX, SDA, UAS).
+// "Frontier" = early-stage contracted but pre-revenue programs (EuroQCI, Lunar Power, commercial stations).
+const REVENUE_MIX = [
+  { year: '2021', total: 138, dev: 83, prod: 52, frontier: 3 },
+  { year: '2022', total: 161, dev: 90, prod: 65, frontier: 6 },
+  { year: '2023', total: 244, dev: 115, prod: 120, frontier: 9 },
+  { year: '2024', total: 304, dev: 104, prod: 185, frontier: 15 },
+  { year: '2025', total: 335, dev: 90, prod: 225, frontier: 20 },
+];
+
+function RevenueMixChart() {
+  const { dark } = useTheme();
+  const [hovered, setHovered] = useState<{ year: string; type: string; value: number; pct: number; x: number; y: number } | null>(null);
+
+  const BAR_W = 56;
+  const GAP = 28;
+  const CHART_H = 220;
+  const PAD_L = 52;
+  const PAD_R = 24;
+  const PAD_T = 32;
+  const PAD_B = 36;
+  const N = REVENUE_MIX.length;
+  const TOTAL_W = PAD_L + N * BAR_W + (N - 1) * GAP + PAD_R;
+
+  const maxTotal = Math.max(...REVENUE_MIX.map((d) => d.total));
+  const yScale = (v: number) => CHART_H * (1 - v / (maxTotal * 1.1));
+  const barHeight = (v: number) => CHART_H * (v / (maxTotal * 1.1));
+
+  const DEV_COLOR = '#8892A4';
+  const PROD_COLOR = '#D4A017';
+  const FRONTIER_COLOR = '#C8102E';
+
+  // Crossover: 2022→2023 is where prod overtakes dev
+  const CROSSOVER_X = PAD_L + 1 * (BAR_W + GAP) + BAR_W / 2 + (PAD_L + 2 * (BAR_W + GAP) + BAR_W / 2 - PAD_L - 1 * (BAR_W + GAP) - BAR_W / 2) / 2;
+
+  const gridLines = [0, 100, 200, 300];
+
+  const textPrimary = dark ? '#F0F2F5' : '#0D1117';
+  const textMuted = dark ? '#6B7280' : '#8892A4';
+  const gridColor = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const cardBg = dark ? '#111827' : '#FFFFFF';
+
+  return (
+    <div className="mt-10">
+      <div className="mb-5">
+        <div className="text-[10px] font-mono tracking-[3px] uppercase mb-1" style={{ color: 'var(--rdw-red)' }}>
+          Revenue Composition
+        </div>
+        <h3 className="text-lg font-bold" style={{ color: textPrimary, fontFamily: "'Space Grotesk', sans-serif" }}>
+          From Researcher to Producer
+        </h3>
+        <p className="text-[13px] mt-1 max-w-2xl" style={{ color: textMuted }}>
+          Revenue mix shift by program maturity stage, 2021–2025. Production-stage programs
+          (repeat deliveries, volume contracts) crossed above development-stage (design, test,
+          EAC-at-risk) in 2023 — the inflection Redwire’s CFO flagged as the path to margin recovery.
+        </p>
+      </div>
+
+      <div className="glass-card p-6 relative overflow-visible">
+        {/* Legend */}
+        <div className="flex flex-wrap gap-5 mb-5">
+          {[
+            { label: 'Development', color: DEV_COLOR },
+            { label: 'Production', color: PROD_COLOR },
+            { label: 'Frontier', color: FRONTIER_COLOR },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm" style={{ background: item.color }} />
+              <span className="text-[11px] font-mono" style={{ color: textMuted }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${TOTAL_W} ${CHART_H + PAD_T + PAD_B}`}
+            style={{ width: '100%', maxWidth: TOTAL_W, display: 'block', margin: '0 auto' }}
+          >
+            {/* Y-axis grid lines */}
+            {gridLines.map((v) => (
+              <g key={v}>
+                <line
+                  x1={PAD_L} y1={PAD_T + yScale(v)}
+                  x2={TOTAL_W - PAD_R} y2={PAD_T + yScale(v)}
+                  stroke={gridColor} strokeWidth={1}
+                />
+                <text
+                  x={PAD_L - 6} y={PAD_T + yScale(v) + 4}
+                  textAnchor="end" fontSize={9}
+                  fontFamily="'Space Mono', monospace"
+                  fill={textMuted}
+                >
+                  ${v}M
+                </text>
+              </g>
+            ))}
+
+            {/* Crossover annotation */}
+            <g>
+              <line
+                x1={CROSSOVER_X} y1={PAD_T - 8}
+                x2={CROSSOVER_X} y2={PAD_T + CHART_H + 4}
+                stroke="#C8102E" strokeWidth={1} strokeDasharray="4 3" opacity={0.6}
+              />
+              <rect
+                x={CROSSOVER_X - 54} y={PAD_T - 26}
+                width={108} height={18} rx={3}
+                fill="#C8102E" opacity={0.15}
+              />
+              <text
+                x={CROSSOVER_X} y={PAD_T - 13}
+                textAnchor="middle" fontSize={9}
+                fontFamily="'Space Mono', monospace"
+                fill="#C8102E" fontWeight={700}
+              >
+                PRODUCTION CROSSOVER
+              </text>
+            </g>
+
+            {/* Bars */}
+            {REVENUE_MIX.map((d, i) => {
+              const x = PAD_L + i * (BAR_W + GAP);
+              const devH = barHeight(d.dev);
+              const prodH = barHeight(d.prod);
+              const frontH = barHeight(d.frontier);
+              const devY = PAD_T + yScale(d.dev + d.prod + d.frontier);
+              const prodY = devY + devH;
+              const frontY = prodY + prodH;
+
+              const segments: { type: string; color: string; y: number; h: number; value: number }[] = [
+                { type: 'Development', color: DEV_COLOR, y: devY, h: devH, value: d.dev },
+                { type: 'Production', color: PROD_COLOR, y: prodY, h: prodH, value: d.prod },
+                { type: 'Frontier', color: FRONTIER_COLOR, y: frontY, h: frontH, value: d.frontier },
+              ];
+
+              return (
+                <g key={d.year}>
+                  {segments.map((seg) => (
+                    <rect
+                      key={seg.type}
+                      x={x} y={seg.y} width={BAR_W} height={Math.max(seg.h, 0)}
+                      fill={seg.color}
+                      opacity={hovered && hovered.year === d.year && hovered.type === seg.type ? 1 : 0.82}
+                      rx={seg.type === 'Development' ? 3 : 0}
+                      style={{ cursor: 'pointer', transition: 'opacity 0.15s' }}
+                      onMouseEnter={(e) => {
+                        const pct = Math.round((seg.value / d.total) * 100);
+                        setHovered({ year: d.year, type: seg.type, value: seg.value, pct, x: e.clientX, y: e.clientY });
+                      }}
+                      onMouseMove={(e) => {
+                        if (hovered) setHovered((h) => h ? { ...h, x: e.clientX, y: e.clientY } : h);
+                      }}
+                      onMouseLeave={() => setHovered(null)}
+                    />
+                  ))}
+                  {/* Total label above bar */}
+                  <text
+                    x={x + BAR_W / 2}
+                    y={devY - 5}
+                    textAnchor="middle"
+                    fontSize={9}
+                    fontFamily="'Space Mono', monospace"
+                    fill={textMuted}
+                  >
+                    ${d.total}M
+                  </text>
+                  {/* Year label */}
+                  <text
+                    x={x + BAR_W / 2}
+                    y={PAD_T + CHART_H + 18}
+                    textAnchor="middle"
+                    fontSize={11}
+                    fontFamily="'Space Grotesk', sans-serif"
+                    fontWeight={600}
+                    fill={textPrimary}
+                  >
+                    {d.year}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Source note */}
+        <p className="text-[10px] font-mono mt-3" style={{ color: textMuted }}>
+          Sources: Redwire 10-K / 8-K filings 2021–2025 (SEC EDGAR) · Mix estimated from earnings commentary,
+          EAC disclosures, and program delivery cadence · Development = design/test/EAC-at-risk programs;
+          Production = repeat-delivery / volume contracts; Frontier = early-stage contracted programs
+        </p>
+      </div>
+
+      {/* Hover tooltip */}
+      {hovered && (
+        <div
+          style={{
+            position: 'fixed',
+            left: hovered.x + 14,
+            top: hovered.y - 10,
+            zIndex: 9999,
+            background: cardBg,
+            border: `1px solid ${hovered.type === 'Production' ? PROD_COLOR : hovered.type === 'Frontier' ? FRONTIER_COLOR : DEV_COLOR}`,
+            borderRadius: 8,
+            padding: '10px 14px',
+            fontSize: 12,
+            color: textPrimary,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+            pointerEvents: 'none',
+            minWidth: 160,
+          }}
+        >
+          <div className="font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            {hovered.year} · {hovered.type}
+          </div>
+          <div style={{ fontFamily: "'Space Mono', monospace" }}>
+            ${hovered.value}M &nbsp;—&nbsp; <span style={{ color: textMuted }}>{hovered.pct}% of total</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PipelinePage() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -210,6 +437,9 @@ export default function PipelinePage() {
         <p className="text-[11px] mt-3 text-center font-mono" style={{ color: "var(--text-muted)" }}>
           Drag nodes freely · Hover for descriptions · Toggle backlog weight scale
         </p>
+
+        {/* Revenue Mix Chart */}
+        <RevenueMixChart />
       </div>
 
       {/* D3 tooltip */}
