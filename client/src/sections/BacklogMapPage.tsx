@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 import { useTheme } from '../App';
+// Static import — bundled at build time, no runtime fetch needed
+import worldGeoJson from '../assets/world.geo.json';
 
 // RDW backlog by country — total contracted backlog $411.2M
 const BACKLOG_COUNTRIES = [

@@ -106,14 +106,14 @@ export default function SotpPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ background: 'var(--rdw-red-dim)' }}>
+                <tr style={{ background: 'rgba(200,16,46,0.05)' }}>
                   <td className="font-semibold" style={{ color: 'var(--rdw-red)' }}>Space Infrastructure</td>
                   <td className="text-right font-mono">$240M</td>
                   <td className="text-right font-mono font-bold" style={{ color: 'var(--rdw-red)' }}>5.0x</td>
                   <td className="text-right font-mono font-bold" style={{ color: 'var(--rdw-red)' }}>$1,200M</td>
                   <td className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Edge Autonomy 5.3x [PitchBook]; AVAV 4.8x FWD; iROSA heritage</td>
                 </tr>
-                <tr>
+                <tr style={{ background: 'rgba(14,165,233,0.05)' }}>
                   <td className="font-semibold" style={{ color: '#0EA5E9' }}>Defense & UAS</td>
                   <td className="text-right font-mono">$215M</td>
                   <td className="text-right font-mono font-bold" style={{ color: '#0EA5E9' }}>9.0x</td>
@@ -127,7 +127,7 @@ export default function SotpPage() {
                   <td className="text-right font-mono font-bold" style={{ color: '#8B5CF6' }}>$300M</td>
                   <td className="text-[11px]" style={{ color: 'var(--text-muted)' }}>SandboxAQ 57.5x [PitchBook]; $9.8B TAM [Statista]; 75% execution discount</td>
                 </tr>
-                <tr>
+                <tr style={{ background: 'rgba(16,185,129,0.05)' }}>
                   <td className="font-semibold" style={{ color: '#10B981' }}>Space Biotech</td>
                   <td className="text-right font-mono">$15M</td>
                   <td className="text-right font-mono font-bold" style={{ color: '#10B981' }}>18.0x</td>
